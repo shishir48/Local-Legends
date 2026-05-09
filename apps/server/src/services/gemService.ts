@@ -14,8 +14,8 @@ export async function listGems(opts: ListOptions) {
   const filter: Record<string, unknown> = { isDeleted: false };
   if (opts.category) filter.category = opts.category;
 
-  const sortSpec =
-    opts.sort === 'recent' ? { createdAt: -1 as const } : { voteCount: -1 as const };
+  const sortSpec: Record<string, 1 | -1> =
+    opts.sort === 'recent' ? { createdAt: -1 } : { voteCount: -1 };
 
   const skip = (opts.page - 1) * opts.limit;
 

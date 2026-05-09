@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as gemService from '../services/gemService';
+import { uploadBufferToCloudinary } from '../lib/cloudinary';
 import {
   CreateGemSchema,
   UpdateGemSchema,
@@ -46,15 +47,21 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const input = CreateGemSchema.parse(req.body);
-    const file = req.file as Express.Multer.File & {
-      path?: string;
-      filename?: string;
-    } | undefined;
+
+    let photoUrl: string | null = null;
+    let photoPublicId: string | null = null;
+    if (req.file) {
+      const asset = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
+      if (asset) {
+        photoUrl = asset.url;
+        photoPublicId = asset.publicId;
+      }
+    }
 
     const gem = await gemService.createGem({
       ...input,
-      photoUrl: file?.path ?? null,
-      photoPublicId: file?.filename ?? null,
+      photoUrl,
+      photoPublicId,
       submittedBy: req.user!._id,
     });
     res.status(201).json(gem.toJSON());
@@ -67,16 +74,18 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const id = ObjectIdSchema.parse(req.params.id);
     const patch = UpdateGemSchema.parse(req.body);
-    const file = req.file as Express.Multer.File & {
-      path?: string;
-      filename?: string;
-    } | undefined;
+
+    let photoOverride: { photoUrl: string | null; photoPublicId: string | null } | null = null;
+    if (req.file) {
+      const asset = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
+      if (asset) {
+        photoOverride = { photoUrl: asset.url, photoPublicId: asset.publicId };
+      }
+    }
 
     const result = await gemService.updateGem(id, req.user!.id, {
       ...patch,
-      ...(file
-        ? { photoUrl: file.path ?? null, photoPublicId: file.filename ?? null }
-        : {}),
+      ...(photoOverride ?? {}),
     });
     res.json(result);
   } catch (err) {
