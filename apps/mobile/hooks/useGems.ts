@@ -1,0 +1,45 @@
+import { useQuery } from '@tanstack/react-query';
+import { gemsApi, categoriesApi, usersApi } from '../services/api';
+
+export function useGems(opts: { category?: string | null; sort?: 'votes' | 'recent' } = {}) {
+  return useQuery({
+    queryKey: ['gems', { category: opts.category ?? null, sort: opts.sort ?? 'votes' }],
+    queryFn: () =>
+      gemsApi.list({
+        category: opts.category ?? undefined,
+        sort: opts.sort ?? 'votes',
+      }),
+  });
+}
+
+export function useGem(id: string | undefined) {
+  return useQuery({
+    enabled: !!id,
+    queryKey: ['gem', id],
+    queryFn: () => gemsApi.detail(id!),
+  });
+}
+
+export function useNearbyGems(opts: { lat?: number; lng?: number; radius?: number } = {}) {
+  return useQuery({
+    enabled: opts.lat !== undefined && opts.lng !== undefined,
+    queryKey: ['gems', 'nearby', opts],
+    queryFn: () => gemsApi.nearby({ lat: opts.lat!, lng: opts.lng!, radius: opts.radius }),
+  });
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: categoriesApi.list,
+    staleTime: 60 * 60 * 1000, // 1 hour — rarely changes
+  });
+}
+
+export function useUserGems(userId: string | undefined) {
+  return useQuery({
+    enabled: !!userId,
+    queryKey: ['user-gems', userId],
+    queryFn: () => usersApi.gemsBySubmitter(userId!),
+  });
+}
