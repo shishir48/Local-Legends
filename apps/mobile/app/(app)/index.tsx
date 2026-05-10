@@ -7,12 +7,14 @@ import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { colors, spacing, text } from '../../utils/theme';
 
-export default function FeedScreen() {
-  const [category, setCategory] = useState<string | null>(null);
-  const gems = useGems({ category });
-  const categories = useCategories();
+interface FeedHeaderProps {
+  categories: { id: string; label: string; emoji: string }[];
+  active: string | null;
+  onChange: (id: string | null) => void;
+}
 
-  const header = (
+function FeedHeader({ categories, active, onChange }: FeedHeaderProps) {
+  return (
     <View>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
         <Text style={text.h1}>Hidden gems</Text>
@@ -20,18 +22,21 @@ export default function FeedScreen() {
           Voted by locals, ranked by you.
         </Text>
       </View>
-      <CategoryFilter
-        categories={categories.data?.items ?? []}
-        active={category}
-        onChange={setCategory}
-      />
+      <CategoryFilter categories={categories} active={active} onChange={onChange} />
     </View>
   );
+}
+
+export default function FeedScreen() {
+  const [category, setCategory] = useState<string | null>(null);
+  const gems = useGems({ category });
+  const categories = useCategories();
+  const cats = categories.data?.items ?? [];
 
   if (gems.isLoading) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-        {header}
+        <FeedHeader categories={cats} active={category} onChange={setCategory} />
         <View style={{ paddingHorizontal: spacing.lg }}>
           <GemCardSkeleton />
           <GemCardSkeleton />
@@ -44,7 +49,7 @@ export default function FeedScreen() {
   if (gems.isError) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-        {header}
+        <FeedHeader categories={cats} active={category} onChange={setCategory} />
         <View style={{ alignItems: 'center', padding: spacing.xl }}>
           <Text style={text.body}>Couldn't load gems.</Text>
           <Text style={[text.muted, { marginTop: spacing.xs }]}>Pull down to retry.</Text>
@@ -57,6 +62,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <FeedHeader categories={cats} active={category} onChange={setCategory} />
       <ScrollView
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         refreshControl={
@@ -67,24 +73,21 @@ export default function FeedScreen() {
           />
         }
       >
-        <View>
-          {header}
-          {items.length === 0 ? (
-            <View style={{ alignItems: 'center', padding: spacing.xxl }}>
-              <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
-              <Text style={text.h2}>No gems yet</Text>
-              <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
-                Be the first to submit one in this category.
-              </Text>
+        {items.length === 0 ? (
+          <View style={{ alignItems: 'center', padding: spacing.xxl }}>
+            <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
+            <Text style={text.h2}>No gems yet</Text>
+            <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
+              Be the first to submit one in this category.
+            </Text>
+          </View>
+        ) : (
+          items.map((g) => (
+            <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
+              <GemCard gem={g} />
             </View>
-          ) : (
-            items.map((g) => (
-              <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
-                <GemCard gem={g} />
-              </View>
-            ))
-          )}
-        </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
