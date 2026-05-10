@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGems, useCategories } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
@@ -12,10 +12,10 @@ export default function FeedScreen() {
   const gems = useGems({ category });
   const categories = useCategories();
 
-  const ListHeader = (
+  const header = (
     <View>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
-        <Text style={[text.h1]}>Hidden gems</Text>
+        <Text style={text.h1}>Hidden gems</Text>
         <Text style={[text.muted, { marginBottom: spacing.sm }]}>
           Voted by locals, ranked by you.
         </Text>
@@ -31,7 +31,7 @@ export default function FeedScreen() {
   if (gems.isLoading) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-        {ListHeader}
+        {header}
         <View style={{ paddingHorizontal: spacing.lg }}>
           <GemCardSkeleton />
           <GemCardSkeleton />
@@ -44,7 +44,7 @@ export default function FeedScreen() {
   if (gems.isError) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-        {ListHeader}
+        {header}
         <View style={{ alignItems: 'center', padding: spacing.xl }}>
           <Text style={text.body}>Couldn't load gems.</Text>
           <Text style={[text.muted, { marginTop: spacing.xs }]}>Pull down to retry.</Text>
@@ -53,26 +53,11 @@ export default function FeedScreen() {
     );
   }
 
+  const items = gems.data?.items ?? [];
+
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <FlatList
-        data={gems.data?.items ?? []}
-        keyExtractor={(g) => g.id}
-        renderItem={({ item }) => (
-          <View style={{ paddingHorizontal: spacing.lg }}>
-            <GemCard gem={item} />
-          </View>
-        )}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={
-          <View style={{ alignItems: 'center', padding: spacing.xxl }}>
-            <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
-            <Text style={text.h2}>No gems yet</Text>
-            <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
-              Be the first to submit one in this category.
-            </Text>
-          </View>
-        }
+      <ScrollView
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         refreshControl={
           <RefreshControl
@@ -81,7 +66,24 @@ export default function FeedScreen() {
             tintColor={colors.primary}
           />
         }
-      />
+      >
+        {header}
+        {items.length === 0 ? (
+          <View style={{ alignItems: 'center', padding: spacing.xxl }}>
+            <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
+            <Text style={text.h2}>No gems yet</Text>
+            <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
+              Be the first to submit one in this category.
+            </Text>
+          </View>
+        ) : (
+          items.map((g) => (
+            <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
+              <GemCard gem={g} />
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
