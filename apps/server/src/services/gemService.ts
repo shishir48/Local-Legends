@@ -3,6 +3,10 @@ import { Gem } from '../models/Gem';
 import { ApiError } from '../utils/ApiError';
 import { deleteCloudinaryAsset } from '../lib/cloudinary';
 
+function withId<T extends { _id: unknown }>(doc: T) {
+  return { ...doc, id: String(doc._id) };
+}
+
 interface ListOptions {
   category?: string;
   sort: 'votes' | 'recent';
@@ -30,7 +34,7 @@ export async function listGems(opts: ListOptions) {
   ]);
 
   return {
-    items,
+    items: items.map(withId),
     page: opts.page,
     limit: opts.limit,
     total,
@@ -58,7 +62,7 @@ export async function findNearby(opts: NearbyOptions) {
     .limit(opts.limit)
     .populate('submittedBy', 'displayName avatarUrl')
     .lean();
-  return items;
+  return items.map(withId);
 }
 
 export async function getGemById(id: string, viewerId?: string) {
@@ -71,7 +75,7 @@ export async function getGemById(id: string, viewerId?: string) {
     viewerId !== undefined &&
     gem.votedBy.some((u) => u.toString() === viewerId);
 
-  return { ...gem, hasVoted };
+  return { ...withId(gem), hasVoted };
 }
 
 interface CreateGemInput {
@@ -180,7 +184,8 @@ export async function toggleVote(gemId: string, userId: string) {
 }
 
 export async function listGemsBySubmitter(userId: string) {
-  return Gem.find({ submittedBy: userId, isDeleted: false })
+  const items = await Gem.find({ submittedBy: userId, isDeleted: false })
     .sort({ createdAt: -1 })
     .lean();
+  return items.map(withId);
 }
