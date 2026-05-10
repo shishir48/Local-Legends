@@ -73,21 +73,23 @@ export default function FeedScreen() {
           />
         }
       >
-        {items.length === 0 ? (
-          <View style={{ alignItems: 'center', padding: spacing.xxl }}>
-            <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
-            <Text style={text.h2}>No gems yet</Text>
-            <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
-              Be the first to submit one in this category.
-            </Text>
-          </View>
-        ) : (
-          items.map((g) => (
-            <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
-              <GemCard gem={g} />
+        <View>
+          {items.length === 0 ? (
+            <View style={{ alignItems: 'center', padding: spacing.xxl }}>
+              <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
+              <Text style={text.h2}>No gems yet</Text>
+              <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
+                Be the first to submit one in this category.
+              </Text>
             </View>
-          ))
-        )}
+          ) : (
+            items.map((g) => (
+              <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
+                <GemCard gem={g} />
+              </View>
+            ))
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
