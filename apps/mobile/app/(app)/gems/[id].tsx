@@ -1,6 +1,5 @@
-import { ActivityIndicator, Image, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import MapView, { Marker } from 'react-native-maps';
 import { useGem } from '../../../hooks/useGems';
 import { VoteButton } from '../../../components/VoteButton';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
@@ -56,16 +55,21 @@ export default function GemDetailScreen() {
           <Text style={[text.body, { marginTop: spacing.xs }]}>{g.address}</Text>
         </View>
 
-        <View style={{ marginTop: spacing.lg, borderRadius: radius.md, overflow: 'hidden' }}>
-          <MapView
-            style={{ width: '100%', height: 180 }}
-            initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.01, longitudeDelta: 0.01 }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-          >
-            <Marker coordinate={{ latitude: lat, longitude: lng }} />
-          </MapView>
-        </View>
+        <Pressable
+          onPress={() => Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`)}
+          style={({ pressed }) => ({
+            marginTop: spacing.lg,
+            padding: spacing.md,
+            backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
+            borderRadius: radius.md,
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+          })}
+        >
+          <Text style={{ fontSize: 18, marginRight: spacing.xs }}>🗺️</Text>
+          <Text style={[text.body, { color: colors.primary, fontWeight: '600' }]}>Open in Google Maps</Text>
+        </Pressable>
 
         {submitter ? (
           <Text style={[text.muted, { marginTop: spacing.lg }]}>
