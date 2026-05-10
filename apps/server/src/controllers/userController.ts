@@ -21,11 +21,12 @@ export async function updateMe(req: Request, res: Response, next: NextFunction) 
 export async function gemsBySubmitter(req: Request, res: Response, next: NextFunction) {
   try {
     const id = ObjectIdSchema.parse(req.params.id);
-    const items = await Gem.find({ submittedBy: id, isDeleted: false })
+    const raw = await Gem.find({ submittedBy: id, isDeleted: false })
       .sort({ createdAt: -1 })
       .lean();
 
-    const totalUpvotes = items.reduce((sum, g) => sum + (g.voteCount ?? 0), 0);
+    const totalUpvotes = raw.reduce((sum, g) => sum + (g.voteCount ?? 0), 0);
+    const items = raw.map((g) => ({ ...g, id: String(g._id) }));
 
     res.json({ items, totalUpvotes });
   } catch (err) {
