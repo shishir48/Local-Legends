@@ -8,11 +8,9 @@ import { useAuthStore } from '../stores/authStore';
 import { colors } from '../utils/theme';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { token, isHydrated, hydrate } = useAuthStore((s) => ({
-    token: s.token,
-    isHydrated: s.isHydrated,
-    hydrate: s.hydrate,
-  }));
+  const token = useAuthStore((s) => s.token);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const hydrate = useAuthStore((s) => s.hydrate);
   const segments = useSegments();
   const router = useRouter();
 
