@@ -6,14 +6,13 @@ import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { colors, spacing, text } from '../../utils/theme';
+import type { Gem } from '../../services/api';
 
-interface FeedHeaderProps {
+function FeedHeader({ categories, active, onChange }: {
   categories: { id: string; label: string; emoji: string }[];
   active: string | null;
   onChange: (id: string | null) => void;
-}
-
-function FeedHeader({ categories, active, onChange }: FeedHeaderProps) {
+}) {
   return (
     <View>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
@@ -23,6 +22,29 @@ function FeedHeader({ categories, active, onChange }: FeedHeaderProps) {
         </Text>
       </View>
       <CategoryFilter categories={categories} active={active} onChange={onChange} />
+    </View>
+  );
+}
+
+function GemList({ items }: { items: Gem[] }) {
+  if (items.length === 0) {
+    return (
+      <View style={{ alignItems: 'center', padding: spacing.xxl }}>
+        <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
+        <Text style={text.h2}>No gems yet</Text>
+        <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
+          Be the first to submit one in this category.
+        </Text>
+      </View>
+    );
+  }
+  return (
+    <View>
+      {items.map((g) => (
+        <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
+          <GemCard gem={g} />
+        </View>
+      ))}
     </View>
   );
 }
@@ -58,8 +80,6 @@ export default function FeedScreen() {
     );
   }
 
-  const items = gems.data?.items ?? [];
-
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <FeedHeader categories={cats} active={category} onChange={setCategory} />
@@ -73,23 +93,7 @@ export default function FeedScreen() {
           />
         }
       >
-        <View>
-          {items.length === 0 ? (
-            <View style={{ alignItems: 'center', padding: spacing.xxl }}>
-              <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
-              <Text style={text.h2}>No gems yet</Text>
-              <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
-                Be the first to submit one in this category.
-              </Text>
-            </View>
-          ) : (
-            items.map((g) => (
-              <View key={g.id} style={{ paddingHorizontal: spacing.lg }}>
-                <GemCard gem={g} />
-              </View>
-            ))
-          )}
-        </View>
+        <GemList items={gems.data?.items ?? []} />
       </ScrollView>
     </SafeAreaView>
   );
