@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text } from 'react-native';
+import { FlatList, Pressable, Text } from 'react-native';
 import type { Category } from '../services/api';
 import { colors, radius, spacing } from '../utils/theme';
 
@@ -8,19 +8,22 @@ interface Props {
   onChange: (id: string | null) => void;
 }
 
+type FilterItem = { id: string | null; label: string; emoji: string };
+
 export function CategoryFilter({ categories, active, onChange }: Props) {
-  const all = [{ id: null as string | null, label: 'All', emoji: '✨' }, ...categories];
+  const data: FilterItem[] = [{ id: null, label: 'All', emoji: '✨' }, ...categories];
+
   return (
-    <ScrollView
+    <FlatList
       horizontal
       showsHorizontalScrollIndicator={false}
+      data={data}
+      keyExtractor={(c) => c.id ?? 'all'}
       contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}
-    >
-      {all.map((c) => {
+      renderItem={({ item: c }) => {
         const isActive = c.id === active;
         return (
           <Pressable
-            key={c.id ?? 'all'}
             onPress={() => onChange(c.id)}
             style={{
               backgroundColor: isActive ? colors.primary : colors.surface,
@@ -32,17 +35,12 @@ export function CategoryFilter({ categories, active, onChange }: Props) {
               borderColor: isActive ? colors.primary : colors.border,
             }}
           >
-            <Text
-              style={{
-                color: isActive ? colors.bg : colors.text,
-                fontWeight: '600',
-              }}
-            >
+            <Text style={{ color: isActive ? colors.bg : colors.text, fontWeight: '600' }}>
               {c.emoji} {c.label}
             </Text>
           </Pressable>
         );
-      })}
-    </ScrollView>
+      }}
+    />
   );
 }

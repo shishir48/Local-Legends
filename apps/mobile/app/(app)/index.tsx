@@ -13,7 +13,7 @@ export default function FeedScreen() {
   const categories = useCategories();
 
   const ListHeader = (
-    <>
+    <View>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
         <Text style={[text.h1]}>Hidden gems</Text>
         <Text style={[text.muted, { marginBottom: spacing.sm }]}>
@@ -25,7 +25,7 @@ export default function FeedScreen() {
         active={category}
         onChange={setCategory}
       />
-    </>
+    </View>
   );
 
   if (gems.isLoading) {
