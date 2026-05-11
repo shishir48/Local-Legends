@@ -21,7 +21,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "API_URL": "https://your-production-server.com"
+        "API_URL": "http://168.144.80.224:4000"
       }
     }
   },
