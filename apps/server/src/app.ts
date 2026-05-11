@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import gemRoutes from './routes/gems';
 import userRoutes from './routes/users';
 import categoryRoutes from './routes/categories';
+import placesRoutes from './routes/places';
 
 export function createApp() {
   const app = express();
@@ -36,6 +37,7 @@ export function createApp() {
   app.use('/api/gems', gemRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/categories', categoryRoutes);
+  app.use('/api/places', placesRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

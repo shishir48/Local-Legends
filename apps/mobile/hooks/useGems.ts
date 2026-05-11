@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { gemsApi, categoriesApi, usersApi } from '../services/api';
 
-export function useGems(opts: { category?: string | null; sort?: 'votes' | 'recent' } = {}) {
+export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent' } = {}) {
   return useQuery({
-    queryKey: ['gems', { category: opts.category ?? null, sort: opts.sort ?? 'votes' }],
+    enabled: !!opts.city,
+    queryKey: ['gems', { category: opts.category ?? null, city: opts.city ?? null, sort: opts.sort ?? 'votes' }],
     queryFn: () =>
       gemsApi.list({
         category: opts.category ?? undefined,
+        city: opts.city ?? undefined,
         sort: opts.sort ?? 'votes',
       }),
   });

@@ -56,7 +56,11 @@ export default function GemDetailScreen() {
         </View>
 
         <Pressable
-          onPress={() => Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`)}
+          onPress={() => {
+            const url = g.mapsUrl
+              ?? `https://www.google.com/maps/place/${encodeURIComponent(g.name)}/@${lat},${lng},17z`;
+            Linking.openURL(url);
+          }}
           style={({ pressed }) => ({
             marginTop: spacing.lg,
             padding: spacing.md,

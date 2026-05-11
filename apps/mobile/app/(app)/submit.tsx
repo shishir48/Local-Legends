@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View, Alert } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
+import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSearchField';
 import { gemsApi, type Gem } from '../../services/api';
 import { useCategories } from '../../hooks/useGems';
 import { colors, radius, spacing, text } from '../../utils/theme';
 
 const SubmitSchema = z.object({
-  name: z.string().min(1, 'Required').max(100),
+  name: z.string().min(1, 'Search and select a business'),
   category: z.string().min(1, 'Pick a category'),
   description: z.string().min(1, 'Required').max(500),
-  address: z.string().min(1, 'Required').max(200),
+  address: z.string().min(1, 'Required'),
+  city: z.string().min(1, 'Required'),
 });
 type SubmitInput = z.infer<typeof SubmitSchema>;
 
@@ -32,36 +33,50 @@ export default function SubmitScreen() {
   const qc = useQueryClient();
   const categories = useCategories();
   const [photo, setPhoto] = useState<PickedPhoto | null>(null);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [place, setPlace] = useState<PlaceResult | null>(null);
 
-  const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<SubmitInput>({
+  const { control, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<SubmitInput>({
     resolver: zodResolver(SubmitSchema),
-    defaultValues: { name: '', category: '', description: '', address: '' },
+    defaultValues: { name: '', category: '', description: '', address: '', city: '' },
   });
 
   const selectedCategory = watch('category');
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      const pos = await Location.getCurrentPositionAsync({});
-      setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    })();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      reset({ name: '', category: '', description: '', address: '', city: '' });
+      setPlace(null);
+      setPhoto(null);
+    }, [])
+  );
+
+  const handlePlaceSelect = (p: PlaceResult) => {
+    setPlace(p);
+    setValue('name', p.name, { shouldValidate: true });
+    setValue('address', p.address, { shouldValidate: true });
+    setValue('city', p.city, { shouldValidate: true });
+  };
+
+  const handlePlaceClear = () => {
+    setPlace(null);
+    setValue('name', '', { shouldValidate: false });
+    setValue('address', '', { shouldValidate: false });
+    setValue('city', '', { shouldValidate: false });
+  };
 
   const create = useMutation({
     mutationFn: async (values: SubmitInput) => {
-      if (!coords) throw new Error('Location unavailable');
+      if (!place) throw new Error('Select a business from the dropdown');
       const form = new FormData();
       form.append('name', values.name);
       form.append('category', values.category);
       form.append('description', values.description);
       form.append('address', values.address);
-      form.append('lat', String(coords.lat));
-      form.append('lng', String(coords.lng));
+      form.append('city', values.city);
+      form.append('mapsUrl', place.mapsUrl);
+      form.append('lat', String(place.lat));
+      form.append('lng', String(place.lng));
       if (photo) {
-        // RN FormData accepts a { uri, name, type } file shape.
         form.append('photo', {
           uri: photo.uri,
           name: photo.fileName,
@@ -104,13 +119,38 @@ export default function SubmitScreen() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ padding: spacing.xl }}>
+        <ScrollView
+          contentContainerStyle={{ padding: spacing.xl }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
           <Text style={text.h1}>Submit a gem</Text>
           <Text style={[text.muted, { marginBottom: spacing.lg }]}>
             Share a place locals love.
           </Text>
 
-          <Field control={control} name="name" label="Name" error={errors.name?.message} />
+          <PlacesSearchField
+            selected={place}
+            onSelect={handlePlaceSelect}
+            onClear={handlePlaceClear}
+            error={errors.name?.message}
+          />
+
+          {place && (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: radius.md,
+                padding: spacing.md,
+                marginBottom: spacing.lg,
+              }}
+            >
+              <Text style={[text.muted, { marginBottom: spacing.xs }]}>Address</Text>
+              <Text style={text.body}>{place.address}</Text>
+              <Text style={[text.muted, { marginTop: spacing.sm, marginBottom: spacing.xs }]}>City</Text>
+              <Text style={text.body}>{place.city}</Text>
+            </View>
+          )}
 
           <Text style={[text.muted, { marginBottom: spacing.xs }]}>Category</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.lg }}>
@@ -150,10 +190,11 @@ export default function SubmitScreen() {
             label="Why is it a gem?"
             multiline
             numberOfLines={4}
+            returnKeyType="done"
+            blurOnSubmit
             error={errors.description?.message}
             style={{ minHeight: 100 }}
           />
-          <Field control={control} name="address" label="Address" error={errors.address?.message} />
 
           <Text style={[text.muted, { marginBottom: spacing.xs }]}>Photo (optional)</Text>
           <Pressable
@@ -175,25 +216,15 @@ export default function SubmitScreen() {
             )}
           </Pressable>
 
-          {!coords ? (
-            <Text style={[text.muted, { color: colors.danger, marginBottom: spacing.md }]}>
-              Location unavailable — enable location to submit.
-            </Text>
-          ) : (
-            <Text style={[text.muted, { marginBottom: spacing.md }]}>
-              📍 Will attach your current location ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
-            </Text>
-          )}
-
           <Pressable
             onPress={handleSubmit((v) => create.mutate(v))}
-            disabled={create.isPending || !coords}
+            disabled={create.isPending || !place}
             style={({ pressed }) => ({
               backgroundColor: colors.primary,
               paddingVertical: spacing.lg,
               borderRadius: radius.md,
               alignItems: 'center',
-              opacity: pressed || create.isPending || !coords ? 0.6 : 1,
+              opacity: pressed || create.isPending || !place ? 0.6 : 1,
             })}
           >
             <Text style={text.cta}>{create.isPending ? 'Submitting…' : 'Submit gem'}</Text>

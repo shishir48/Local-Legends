@@ -11,6 +11,8 @@ export const CreateGemSchema = z.object({
   category: z.enum(GEM_CATEGORIES),
   description: z.string().min(1).max(500).trim(),
   address: z.string().min(1).max(200).trim(),
+  city: z.string().trim().min(1).max(100),
+  mapsUrl: z.string().url().optional(),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
 });
@@ -20,12 +22,14 @@ export const UpdateGemSchema = z.object({
   category: z.enum(GEM_CATEGORIES).optional(),
   description: z.string().min(1).max(500).trim().optional(),
   address: z.string().min(1).max(200).trim().optional(),
+  city: z.string().trim().min(1).max(100).optional(),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
 });
 
 export const ListGemsQuerySchema = z.object({
   category: z.enum(GEM_CATEGORIES).optional(),
+  city: z.string().trim().max(100).optional(),
   sort: z.enum(['votes', 'recent']).default('votes'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),

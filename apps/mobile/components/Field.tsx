@@ -15,6 +15,7 @@ export function Field<T extends FieldValues>({
   name,
   label,
   error,
+  style,
   ...inputProps
 }: FieldProps<T>) {
   return (
@@ -29,16 +30,19 @@ export function Field<T extends FieldValues>({
             onChangeText={onChange}
             onBlur={onBlur}
             placeholderTextColor={colors.textMuted}
-            style={{
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderWidth: 1,
-              borderColor: error ? colors.danger : colors.border,
-              borderRadius: radius.md,
-              paddingVertical: spacing.md,
-              paddingHorizontal: spacing.lg,
-              fontSize: 16,
-            }}
+            style={[
+              {
+                backgroundColor: colors.surface,
+                color: colors.text,
+                borderWidth: 1,
+                borderColor: error ? colors.danger : colors.border,
+                borderRadius: radius.md,
+                paddingVertical: spacing.md,
+                paddingHorizontal: spacing.lg,
+                fontSize: 16,
+              },
+              style,
+            ]}
             {...inputProps}
           />
         )}

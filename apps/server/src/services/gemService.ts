@@ -9,6 +9,7 @@ function withId<T extends { _id: unknown }>(doc: T) {
 
 interface ListOptions {
   category?: string;
+  city?: string;
   sort: 'votes' | 'recent';
   page: number;
   limit: number;
@@ -17,6 +18,7 @@ interface ListOptions {
 export async function listGems(opts: ListOptions) {
   const filter: Record<string, unknown> = { isDeleted: false };
   if (opts.category) filter.category = opts.category;
+  if (opts.city) filter.city = { $regex: new RegExp(`^${opts.city}$`, 'i') };
 
   const sortSpec: Record<string, 1 | -1> =
     opts.sort === 'recent' ? { createdAt: -1 } : { voteCount: -1 };
@@ -83,6 +85,8 @@ interface CreateGemInput {
   category: string;
   description: string;
   address: string;
+  city: string;
+  mapsUrl?: string | null;
   lat: number;
   lng: number;
   photoUrl?: string | null;
@@ -96,6 +100,8 @@ export async function createGem(input: CreateGemInput) {
     category: input.category,
     description: input.description,
     address: input.address,
+    city: input.city,
+    mapsUrl: input.mapsUrl ?? null,
     location: { type: 'Point', coordinates: [input.lng, input.lat] },
     photoUrl: input.photoUrl ?? null,
     photoPublicId: input.photoPublicId ?? null,

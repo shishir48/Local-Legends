@@ -47,6 +47,8 @@ export interface Gem {
   category: 'food' | 'nature' | 'shop' | 'bar' | 'art' | 'other';
   description: string;
   address: string;
+  city: string;
+  mapsUrl: string | null;
   location: { type: 'Point'; coordinates: [number, number] };
   photoUrl: string | null;
   voteCount: number;
@@ -81,7 +83,7 @@ export const authApi = {
 };
 
 export const gemsApi = {
-  list: (params?: { category?: string; sort?: 'votes' | 'recent'; page?: number; limit?: number }) =>
+  list: (params?: { category?: string; city?: string; sort?: 'votes' | 'recent'; page?: number; limit?: number }) =>
     api.get<PaginatedGems>('/api/gems', { params }).then((r) => r.data),
   nearby: (params: { lat: number; lng: number; radius?: number; limit?: number }) =>
     api.get<{ items: Gem[] }>('/api/gems/nearby', { params }).then((r) => r.data),
@@ -103,4 +105,19 @@ export const usersApi = {
 
 export const categoriesApi = {
   list: () => api.get<{ items: Category[] }>('/api/categories').then((r) => r.data),
+};
+
+export interface PlacePrediction {
+  place_id: string;
+  structured_formatting: { main_text: string; secondary_text: string };
+  detail: { name: string; address: string; city: string; lat: number; lng: number; mapsUrl: string };
+}
+
+export const placesApi = {
+  autocomplete: (input: string) =>
+    api
+      .get<{ predictions: PlacePrediction[]; status: string }>('/api/places/autocomplete', {
+        params: { input },
+      })
+      .then((r) => r.data),
 };

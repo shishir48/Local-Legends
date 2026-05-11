@@ -13,6 +13,7 @@ const GemSchema = new Schema(
     },
     description: { type: String, required: true, maxlength: 500, trim: true },
     address: { type: String, required: true, trim: true },
+    city: { type: String, trim: true, default: '', index: true },
     location: {
       type: {
         type: String,
@@ -32,6 +33,7 @@ const GemSchema = new Schema(
         },
       },
     },
+    mapsUrl: { type: String, default: null },
     photoUrl: { type: String, default: null },
     photoPublicId: { type: String, default: null }, // Cloudinary id, used to delete
     submittedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
