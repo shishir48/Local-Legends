@@ -21,7 +21,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "API_URL": "http://168.144.80.224:4000"
+        "API_URL": "https://shishir.cloud"
       }
     }
   },
