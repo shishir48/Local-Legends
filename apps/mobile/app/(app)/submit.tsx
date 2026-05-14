@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
 import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSearchField';
 import { gemsApi, type Gem } from '../../services/api';
+import { logger } from '../../services/logger';
 import { useCategories } from '../../hooks/useGems';
 import { colors, radius, spacing, text } from '../../utils/theme';
 
@@ -87,6 +88,7 @@ export default function SubmitScreen() {
     },
     onSuccess: (gem: Gem) => {
       qc.invalidateQueries({ queryKey: ['gems'] });
+      logger.event('gem_submitted', { gemId: gem.id, name: gem.name });
       router.replace(`/gems/${gem.id}`);
     },
     onError: (err: Error) => {

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { gemsApi, type Gem, type PaginatedGems } from '../services/api';
+import { logger } from '../services/logger';
 
 interface VoteContext {
   prevDetail?: Gem;
@@ -56,6 +57,10 @@ export function useVote(gemId: string) {
       if (!ctx) return;
       if (ctx.prevDetail) qc.setQueryData(['gem', gemId], ctx.prevDetail);
       ctx.prevLists.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+
+    onSuccess: (data) => {
+      logger.event('vote_cast', { gemId, voted: data.voted });
     },
 
     onSettled: () => {

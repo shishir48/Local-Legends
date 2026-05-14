@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Local Legend',
     slug: 'local-legend',
-    version: '1.0.0',
+    version: '1.1.0',
     orientation: 'portrait',
     scheme: 'locallegend',
     userInterfaceStyle: 'dark',
@@ -30,7 +30,7 @@ module.exports = {
 
     android: {
       package: 'com.shishir48.locallegend',
-      versionCode: 1,
+      versionCode: 2,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#0F172A',
@@ -62,7 +62,7 @@ module.exports = {
     ],
 
     extra: {
-      apiUrl: process.env.API_URL || 'http://192.168.18.131:4000',
+      apiUrl: process.env.API_URL || 'http://192.168.18.230:4000',
       eas: {
         projectId: '55c340e3-bae4-4dd8-ae7f-0c818bc45be9',
       },

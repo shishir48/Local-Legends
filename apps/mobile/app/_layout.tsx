@@ -6,6 +6,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '../services/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { colors } from '../utils/theme';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { logger } from '../services/logger';
+
+const prevHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+  logger.error(error.message, { stack: error.stack, isFatal: isFatal ?? false });
+  prevHandler?.(error, isFatal);
+});
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -41,16 +49,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <StatusBar barStyle="light-content" />
-        <AuthGate>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(app)" />
-          </Stack>
-        </AuthGate>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <StatusBar barStyle="light-content" />
+          <AuthGate>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(app)" />
+            </Stack>
+          </AuthGate>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
