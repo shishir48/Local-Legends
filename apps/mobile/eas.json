@@ -9,14 +9,16 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "API_URL": "http://192.168.18.131:4000"
+        "API_URL": "https://shishir.cloud"
       }
     },
     "production": {
+      "channel": "production",
       "android": {
         "buildType": "app-bundle"
       },
