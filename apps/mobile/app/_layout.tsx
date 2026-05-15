@@ -7,7 +7,7 @@ import { queryClient } from '../services/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { colors } from '../utils/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { logger } from '../services/logger';
+import { logger, setLoggerUserIdResolver } from '../services/logger';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -43,6 +43,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   useEffect(() => {
+    setLoggerUserIdResolver(() => useAuthStore.getState().user?.id ?? undefined);
     const prevHandler = ErrorUtils.getGlobalHandler();
     ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
       logger.error(error.message, { stack: error.stack, isFatal: isFatal ?? false });

@@ -1,6 +1,5 @@
-import { AppState, type AppStateStatus, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { useAuthStore } from '../stores/authStore';
 
 type LogLevel = 'error' | 'warn' | 'info' | 'event';
 
@@ -22,17 +21,17 @@ const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 const PLATFORM = (Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web') as LogEntry['platform'];
 const FLUSH_INTERVAL_MS = 10_000;
 
+// userId resolved lazily at flush time to avoid circular import
+let getUserId: (() => string | undefined) | null = null;
+export function setLoggerUserIdResolver(fn: () => string | undefined) {
+  getUserId = fn;
+}
+
 class Logger {
   private queue: LogEntry[] = [];
-  private flushTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    this.flushTimer = setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
-    AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'background' || state === 'inactive') {
-        this.flush();
-      }
-    });
+    setInterval(() => this.flush(), FLUSH_INTERVAL_MS);
   }
 
   private buildEntry(level: LogLevel, message: string, data?: Record<string, unknown>): LogEntry {
@@ -40,7 +39,7 @@ class Logger {
       level,
       message,
       data,
-      userId: useAuthStore.getState().user?.id ?? undefined,
+      userId: getUserId?.(),
       appVersion: APP_VERSION,
       platform: PLATFORM,
       timestamp: new Date().toISOString(),
@@ -48,8 +47,7 @@ class Logger {
   }
 
   error(message: string, data?: Record<string, unknown>) {
-    const entry = this.buildEntry('error', message, data);
-    this.queue.push(entry);
+    this.queue.push(this.buildEntry('error', message, data));
     this.flush();
   }
 

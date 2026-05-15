@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 import Constants from 'expo-constants';
 import { useAuthStore } from '../stores/authStore';
-import { logger } from './logger';
 
 const API_URL =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
@@ -26,11 +25,14 @@ api.interceptors.request.use((cfg) => {
 api.interceptors.response.use(
   (res) => res,
   (err: AxiosError<{ error?: string }>) => {
-    logger.error('API error', {
-      url: err.config?.url,
-      method: err.config?.method,
-      status: err.response?.status,
-      responseBody: err.response?.data,
+    // Import lazily to avoid circular dependency (api → logger → authStore → api)
+    import('./logger').then(({ logger }) => {
+      logger.error('API error', {
+        url: err.config?.url,
+        method: err.config?.method,
+        status: err.response?.status,
+        responseBody: err.response?.data,
+      });
     });
     if (err.response?.status === 401) {
       const token = useAuthStore.getState().token;
