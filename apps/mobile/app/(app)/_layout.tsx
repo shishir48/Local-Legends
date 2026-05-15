@@ -48,14 +48,7 @@ export default function AppTabsLayout() {
           tabBarIcon: ({ focused }) => <TabIcon icon="📍" focused={focused} />,
         }}
       />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ focused }) => <TabIcon icon="🗺️" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
+<Tabs.Screen
         name="submit"
         options={{
           title: 'Submit',
