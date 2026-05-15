@@ -68,14 +68,19 @@ class Logger {
   async flush() {
     if (this.queue.length === 0) return;
     const batch = this.queue.splice(0, 50);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
     try {
       await fetch(`${API_URL}/api/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ logs: batch }),
+        signal: controller.signal,
       });
     } catch {
       // Fire-and-forget — never rethrow, never block UI
+    } finally {
+      clearTimeout(timer);
     }
   }
 }
