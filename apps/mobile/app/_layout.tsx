@@ -9,12 +9,6 @@ import { colors } from '../utils/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { logger } from '../services/logger';
 
-const prevHandler = ErrorUtils.getGlobalHandler();
-ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-  logger.error(error.message, { stack: error.stack, isFatal: isFatal ?? false });
-  prevHandler?.(error, isFatal);
-});
-
 function AuthGate({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   const isHydrated = useAuthStore((s) => s.isHydrated);
@@ -48,6 +42,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const prevHandler = ErrorUtils.getGlobalHandler();
+    ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      logger.error(error.message, { stack: error.stack, isFatal: isFatal ?? false });
+      prevHandler?.(error, isFatal);
+    });
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
