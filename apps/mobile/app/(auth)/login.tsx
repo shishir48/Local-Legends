@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Link } from 'expo-router';
 import { Pressable, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import { Field } from '../../components/Field';
 import { useLogin } from '../../hooks/useAuth';
 import { colors, radius, spacing, text } from '../../utils/theme';
@@ -80,6 +81,10 @@ export default function LoginScreen() {
             Register
           </Link>
         </View>
+
+        <Text style={[text.muted, { textAlign: 'center', marginTop: spacing.xl, fontSize: 11 }]}>
+          v{Constants.expoConfig?.version ?? '—'}
+        </Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
