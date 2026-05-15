@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, ScrollView, Text, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../stores/authStore';
 import { useUserGems } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
@@ -86,6 +87,10 @@ export default function ProfileScreen() {
         >
           <Text style={{ color: colors.danger, fontWeight: '600' }}>Sign out</Text>
         </Pressable>
+
+        <Text style={[text.muted, { textAlign: 'center', marginTop: spacing.lg, fontSize: 11 }]}>
+          v{Constants.expoConfig?.version ?? '—'}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
