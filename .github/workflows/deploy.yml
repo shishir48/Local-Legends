@@ -1,0 +1,64 @@
+name: Deploy server
+
+# Auto-deploys the API to the droplet on push to main when server code
+# changes. Tests gate the deploy — a red build never ships.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/server/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: # allow manual "Run workflow" from the Actions tab
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: false # never interrupt a deploy mid-flight
+
+jobs:
+  deploy:
+    name: Test, build & ship to droplet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/server/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Deploy to droplet
+        env:
+          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          HOST: ${{ secrets.DROPLET_HOST }}
+          DEPLOY_USER: ${{ secrets.DROPLET_USER }}
+          APP_DIR: /opt/local-legend-api
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          SSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes"
+          TARGET="$DEPLOY_USER@$HOST"
+
+          # 1. Back up the live build, keep the 5 most recent backups
+          $SSH "$TARGET" "cd $APP_DIR && cp -r dist dist.bak.\$(date +%Y%m%d-%H%M%S) && ls -dt dist.bak.* | tail -n +6 | xargs -r rm -rf"
+
+          # 2. Ship fresh artifacts (--delete drops files removed from the build)
+          rsync -az --delete -e "$SSH" dist/ "$TARGET:$APP_DIR/dist/"
+          rsync -az -e "$SSH" package.json package-lock.json "$TARGET:$APP_DIR/"
+
+          # 3. Install prod deps (picks up new runtime deps) and restart
+          $SSH "$TARGET" "cd $APP_DIR && npm install --omit=dev && pm2 restart local-legend-api --update-env"
+
+          # 4. Health check — fail the deploy if the API doesn't come back 2xx
+          $SSH "$TARGET" "sleep 3 && curl -fsS http://127.0.0.1:4000/health >/dev/null && echo 'HEALTHY'"
