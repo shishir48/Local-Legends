@@ -29,4 +29,6 @@ const LogSchema = new mongoose.Schema<ILog>(
 // Auto-delete logs older than 30 days
 LogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
-export const Log: Model<ILog> = mongoose.model<ILog>('Log', LogSchema);
+// Reuse the compiled model if it already exists (test re-imports / hot reload).
+export const Log: Model<ILog> =
+  (mongoose.models.Log as Model<ILog>) || mongoose.model<ILog>('Log', LogSchema);

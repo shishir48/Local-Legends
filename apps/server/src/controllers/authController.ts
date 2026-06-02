@@ -38,15 +38,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 export async function me(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.user) throw ApiError.unauthorized();
-    const user = await User.findById(req.user.id).lean();
+    const user = await User.findById(req.user.id);
     if (!user) throw ApiError.notFound('User not found');
-    res.json({
-      id: user._id.toString(),
-      email: user.email,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      createdAt: user.createdAt,
-    });
+    res.json(user.toJSON());
   } catch (err) {
     next(err);
   }

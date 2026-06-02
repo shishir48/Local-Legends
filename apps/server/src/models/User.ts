@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType, Types } from 'mongoose';
+import { Schema, model, models, InferSchemaType, Types, type Model } from 'mongoose';
 
 const UserSchema = new Schema(
   {
@@ -13,6 +13,7 @@ const UserSchema = new Schema(
     passwordHash: { type: String, required: true },
     displayName: { type: String, required: true, trim: true, maxlength: 50 },
     avatarUrl: { type: String, default: null },
+    isAdmin: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -30,4 +31,6 @@ UserSchema.set('toJSON', {
 });
 
 export type UserDoc = InferSchemaType<typeof UserSchema> & { _id: Types.ObjectId };
-export const User = model('User', UserSchema);
+type UserModel = Model<InferSchemaType<typeof UserSchema>>;
+// Reuse the compiled model if it already exists (test re-imports / hot reload).
+export const User = (models.User as UserModel) || model('User', UserSchema);

@@ -23,6 +23,7 @@ export const UpdateGemSchema = z.object({
   description: z.string().min(1).max(500).trim().optional(),
   address: z.string().min(1).max(200).trim().optional(),
   city: z.string().trim().min(1).max(100).optional(),
+  mapsUrl: z.string().url().optional(),
   lat: z.coerce.number().min(-90).max(90).optional(),
   lng: z.coerce.number().min(-180).max(180).optional(),
 });

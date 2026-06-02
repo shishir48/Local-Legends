@@ -32,7 +32,7 @@ export async function authenticate(
 
     const payload = jwt.verify(token, config.JWT_SECRET) as JwtPayload;
 
-    const user = await User.findById(payload.sub).select('_id email').lean();
+    const user = await User.findById(payload.sub).select('_id email isAdmin').lean();
     if (!user) {
       throw ApiError.unauthorized('User no longer exists');
     }
@@ -41,6 +41,7 @@ export async function authenticate(
       id: user._id.toString(),
       _id: user._id,
       email: user.email,
+      isAdmin: user.isAdmin ?? false,
     };
     next();
   } catch (err) {
@@ -55,6 +56,17 @@ export async function authenticate(
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   if (!req.user) {
     return next(ApiError.unauthorized());
+  }
+  next();
+}
+
+/** Throws 401 if unauthenticated, 403 if the user is not an admin. */
+export function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
+  if (!req.user) {
+    return next(ApiError.unauthorized());
+  }
+  if (!req.user.isAdmin) {
+    return next(ApiError.forbidden('Admin access required'));
   }
   next();
 }

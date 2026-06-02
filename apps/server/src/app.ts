@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import { config } from './lib/config';
 import { authenticate } from './middleware/authenticate';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -15,6 +17,9 @@ export function createApp() {
   const app = express();
 
   app.set('trust proxy', 1); // honour X-Forwarded-For from Railway/Cloudflare
+
+  app.use(helmet());
+  app.use(compression());
 
   app.use(
     cors({

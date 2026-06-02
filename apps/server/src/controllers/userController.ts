@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
-import { Gem } from '../models/Gem';
 import { ApiError } from '../utils/ApiError';
+import * as gemService from '../services/gemService';
 import { ObjectIdSchema, UpdateProfileSchema } from '../utils/validators';
 
 export async function updateMe(req: Request, res: Response, next: NextFunction) {
@@ -21,13 +21,8 @@ export async function updateMe(req: Request, res: Response, next: NextFunction) 
 export async function gemsBySubmitter(req: Request, res: Response, next: NextFunction) {
   try {
     const id = ObjectIdSchema.parse(req.params.id);
-    const raw = await Gem.find({ submittedBy: id, isDeleted: false })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const totalUpvotes = raw.reduce((sum, g) => sum + (g.voteCount ?? 0), 0);
-    const items = raw.map((g) => ({ ...g, id: String(g._id) }));
-
+    const items = await gemService.listGemsBySubmitter(id);
+    const totalUpvotes = items.reduce((sum, g) => sum + (g.voteCount ?? 0), 0);
     res.json({ items, totalUpvotes });
   } catch (err) {
     next(err);

@@ -7,6 +7,7 @@ declare global {
         id: string;
         _id: Types.ObjectId;
         email: string;
+        isAdmin: boolean;
       };
     }
   }

@@ -114,6 +114,8 @@ interface UpdateGemPatch {
   category?: string;
   description?: string;
   address?: string;
+  city?: string;
+  mapsUrl?: string | null;
   lat?: number;
   lng?: number;
   photoUrl?: string | null;
@@ -135,6 +137,8 @@ export async function updateGem(
   if (patch.category !== undefined) gem.category = patch.category as typeof gem.category;
   if (patch.description !== undefined) gem.description = patch.description;
   if (patch.address !== undefined) gem.address = patch.address;
+  if (patch.city !== undefined) gem.city = patch.city;
+  if (patch.mapsUrl !== undefined) gem.mapsUrl = patch.mapsUrl;
   if (patch.lat !== undefined && patch.lng !== undefined) {
     gem.location = { type: 'Point', coordinates: [patch.lng, patch.lat] };
   }
@@ -164,29 +168,35 @@ export async function deleteGem(id: string, userId: string) {
 }
 
 export async function toggleVote(gemId: string, userId: string) {
-  const gem = await Gem.findOne({ _id: gemId, isDeleted: false }).select(
-    '_id votedBy voteCount'
-  );
+  const gem = await Gem.findOne({ _id: gemId, isDeleted: false }).select('_id votedBy');
   if (!gem) throw ApiError.notFound('Gem not found');
 
   const userObjectId = new Types.ObjectId(userId);
   const hasVoted = gem.votedBy.some((u) => u.toString() === userId);
 
+  // Conditional atomic updates keep voteCount in lockstep with votedBy. The
+  // membership filter ($ne / equality) means concurrent duplicate toggles
+  // match at most once, so $inc can never double-count (voteCount drift).
   if (hasVoted) {
-    const updated = await Gem.findByIdAndUpdate(
-      gemId,
+    const updated = await Gem.findOneAndUpdate(
+      { _id: gemId, votedBy: userObjectId },
       { $pull: { votedBy: userObjectId }, $inc: { voteCount: -1 } },
       { new: true }
     ).select('voteCount');
-    return { voted: false, voteCount: updated?.voteCount ?? gem.voteCount - 1 };
+    if (updated) return { voted: false, voteCount: updated.voteCount };
+  } else {
+    const updated = await Gem.findOneAndUpdate(
+      { _id: gemId, votedBy: { $ne: userObjectId } },
+      { $addToSet: { votedBy: userObjectId }, $inc: { voteCount: 1 } },
+      { new: true }
+    ).select('voteCount');
+    if (updated) return { voted: true, voteCount: updated.voteCount };
   }
 
-  const updated = await Gem.findByIdAndUpdate(
-    gemId,
-    { $addToSet: { votedBy: userObjectId }, $inc: { voteCount: 1 } },
-    { new: true }
-  ).select('voteCount');
-  return { voted: true, voteCount: updated?.voteCount ?? gem.voteCount + 1 };
+  // Lost the race (state already changed under us): report the live state.
+  const current = await Gem.findById(gemId).select('voteCount votedBy');
+  const voted = current?.votedBy.some((u) => u.toString() === userId) ?? false;
+  return { voted, voteCount: current?.voteCount ?? 0 };
 }
 
 export async function listGemsBySubmitter(userId: string) {

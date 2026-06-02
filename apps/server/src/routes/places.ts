@@ -1,9 +1,21 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 const UA = 'LocalLegend/1.0 (demo app)';
+const FETCH_TIMEOUT_MS = 5_000;
+
+// Nominatim's usage policy caps callers at ~1 req/s. Throttle hard so this
+// open proxy can't be abused to hammer (and get us banned from) Nominatim.
+const placesLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many search requests, slow down' },
+});
 
 const CITY_SUFFIXES = /\s+(city\s+district|municipal\s+corporation|corporation|district|urban)\s*$/i;
 
@@ -22,7 +34,7 @@ function extractCity(address: Record<string, string>): string {
   return '';
 }
 
-router.get('/autocomplete', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/autocomplete', placesLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { input } = req.query;
     if (!input || typeof input !== 'string' || !input.trim()) {
@@ -36,9 +48,12 @@ router.get('/autocomplete', async (req: Request, res: Response, next: NextFuncti
     url.searchParams.set('limit', '8');
     url.searchParams.set('dedupe', '1');
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const resp = await fetch(url.toString(), {
       headers: { 'User-Agent': UA, 'Accept-Language': 'en' },
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
 
     const raw = await resp.json() as Array<{
       osm_id: number;

@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { Log } from '../models/Log';
-import { requireAuth } from '../middleware/authenticate';
+import { requireAdmin } from '../middleware/authenticate';
 
 const router = Router();
 
@@ -48,7 +48,7 @@ router.post('/', logsLimiter, async (req: Request, res: Response, next: NextFunc
   }
 });
 
-router.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { level, userId, from, to, limit } = req.query;
 

@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType, Types } from 'mongoose';
+import { Schema, model, models, InferSchemaType, Types, type Model } from 'mongoose';
 
 export const GEM_CATEGORIES = ['food', 'nature', 'shop', 'bar', 'art', 'other'] as const;
 export type GemCategory = (typeof GEM_CATEGORIES)[number];
@@ -59,4 +59,6 @@ GemSchema.set('toJSON', {
 });
 
 export type GemDoc = InferSchemaType<typeof GemSchema> & { _id: Types.ObjectId };
-export const Gem = model('Gem', GemSchema);
+type GemModel = Model<InferSchemaType<typeof GemSchema>>;
+// Reuse the compiled model if it already exists (test re-imports / hot reload).
+export const Gem = (models.Gem as GemModel) || model('Gem', GemSchema);
