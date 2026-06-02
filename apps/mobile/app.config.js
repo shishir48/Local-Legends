@@ -8,9 +8,12 @@ module.exports = {
     updates: {
       url: 'https://u.expo.dev/55c340e3-bae4-4dd8-ae7f-0c818bc45be9',
     },
-    runtimeVersion: {
-      policy: 'appVersion',
-    },
+    // Pinned (not appVersion policy) so `version` can bump on every change
+    // while OTA targeting stays constant. Existing installs were built at
+    // appVersion 1.1.4 → their embedded runtimeVersion is already '1.1.4',
+    // so EAS updates under this runtime reach them. Only bump this string
+    // when a NATIVE change (new native module / SDK) requires a rebuild.
+    runtimeVersion: '1.1.4',
     userInterfaceStyle: 'dark',
 
     icon: './assets/icon.png',
