@@ -1,5 +1,6 @@
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useGem } from '../../../hooks/useGems';
 import { VoteButton } from '../../../components/VoteButton';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
@@ -71,7 +72,7 @@ export default function GemDetailScreen() {
             justifyContent: 'center',
           })}
         >
-          <Text style={{ fontSize: 18, marginRight: spacing.xs }}>🗺️</Text>
+          <Ionicons name="map-outline" size={18} color={colors.primary} style={{ marginRight: spacing.sm }} />
           <Text style={[text.body, { color: colors.primary, fontWeight: '600' }]}>Open in Google Maps</Text>
         </Pressable>
 

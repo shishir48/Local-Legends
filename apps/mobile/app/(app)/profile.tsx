@@ -1,11 +1,31 @@
-import { ActivityIndicator, Pressable, ScrollView, Text, View, Image } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useUserGems } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
+import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { categoryEmoji, formatVotes } from '../../utils/format';
-import { colors, radius, spacing, text } from '../../utils/theme';
+import { colors, radius, shadow, spacing, text } from '../../utils/theme';
+
+function StatCard({ value, label }: { value: string | number; label: string }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: radius.md,
+        alignItems: 'center',
+        ...shadow.card,
+      }}
+    >
+      <Text style={[text.h2, { color: colors.primary }]}>{value}</Text>
+      <Text style={text.muted}>{label}</Text>
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
@@ -23,75 +43,93 @@ export default function ProfileScreen() {
   const totalUpvotes = submissions.data?.totalUpvotes ?? 0;
   const items = submissions.data?.items ?? [];
 
-  return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}>
-        <View style={{ paddingVertical: spacing.lg }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg }}>
-            {user.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={{ width: 64, height: 64, borderRadius: 32, marginRight: spacing.md }} />
-            ) : (
-              <View style={{ width: 64, height: 64, borderRadius: 32, marginRight: spacing.md, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 28 }}>👤</Text>
-              </View>
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={text.h2}>{user.displayName}</Text>
-              <Text style={text.muted}>{user.email}</Text>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: 'row', marginBottom: spacing.lg }}>
-            <View style={{ flex: 1, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radius.md, marginRight: spacing.sm, alignItems: 'center' }}>
-              <Text style={[text.h2, { color: colors.primary }]}>{items.length}</Text>
-              <Text style={text.muted}>Gems</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radius.md, marginLeft: spacing.sm, alignItems: 'center' }}>
-              <Text style={[text.h2, { color: colors.primary }]}>{formatVotes(totalUpvotes)}</Text>
-              <Text style={text.muted}>Upvotes</Text>
-            </View>
-          </View>
-
-          <Text style={[text.h2, { marginBottom: spacing.md }]}>Your gems</Text>
-        </View>
-
-        {submissions.isLoading ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : items.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
-            <Text style={{ fontSize: 48, marginBottom: spacing.sm }}>{categoryEmoji('other')}</Text>
-            <Text style={text.body}>You haven't submitted a gem yet.</Text>
-            <Text style={[text.muted, { marginTop: spacing.xs }]}>Tap + below to add one.</Text>
-          </View>
+  const header = (
+    <View style={{ paddingVertical: spacing.lg }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg }}>
+        {user.avatarUrl ? (
+          <Image source={{ uri: user.avatarUrl }} style={{ width: 64, height: 64, borderRadius: 32, marginRight: spacing.md }} />
         ) : (
-          <View>
-            {items.map((g) => (
-              <View key={g.id}>
-                <GemCard gem={g} />
-              </View>
-            ))}
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              marginRight: spacing.md,
+              backgroundColor: colors.surface,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="person" size={30} color={colors.textMuted} />
           </View>
         )}
+        <View style={{ flex: 1 }}>
+          <Text style={text.h2}>{user.displayName}</Text>
+          <Text style={text.muted}>{user.email}</Text>
+        </View>
+      </View>
 
-        <Pressable
-          onPress={logout}
-          style={({ pressed }) => ({
-            marginTop: spacing.xl,
-            padding: spacing.md,
-            borderRadius: radius.md,
-            borderWidth: 1,
-            borderColor: colors.danger,
-            alignItems: 'center',
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Text style={{ color: colors.danger, fontWeight: '600' }}>Sign out</Text>
-        </Pressable>
+      <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
+        <StatCard value={items.length} label="Gems" />
+        <StatCard value={formatVotes(totalUpvotes)} label="Upvotes" />
+      </View>
 
-        <Text style={[text.muted, { textAlign: 'center', marginTop: spacing.lg, fontSize: 11 }]}>
-          v{Constants.expoConfig?.version ?? '—'}
-        </Text>
-      </ScrollView>
+      <Text style={[text.h2, { marginBottom: spacing.md }]}>Your gems</Text>
+    </View>
+  );
+
+  const footer = (
+    <View>
+      <Pressable
+        onPress={logout}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
+        style={({ pressed }) => ({
+          marginTop: spacing.xl,
+          padding: spacing.md,
+          borderRadius: radius.md,
+          borderWidth: 1,
+          borderColor: colors.danger,
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'center',
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Ionicons name="log-out-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
+        <Text style={{ color: colors.danger, fontWeight: '600' }}>Sign out</Text>
+      </Pressable>
+      <Text style={[text.muted, { textAlign: 'center', marginTop: spacing.lg, fontSize: 11 }]}>
+        v{Constants.expoConfig?.version ?? '—'}
+      </Text>
+    </View>
+  );
+
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <FlatList
+        data={items}
+        keyExtractor={(g) => g.id}
+        renderItem={({ item }) => <GemCard gem={item} />}
+        ListHeaderComponent={header}
+        ListFooterComponent={footer}
+        ListEmptyComponent={
+          submissions.isLoading ? (
+            <View>
+              <GemCardSkeleton />
+              <GemCardSkeleton />
+            </View>
+          ) : (
+            <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
+              <Text style={{ fontSize: 48, marginBottom: spacing.sm }}>{categoryEmoji('other')}</Text>
+              <Text style={text.body}>You haven't submitted a gem yet.</Text>
+              <Text style={[text.muted, { marginTop: spacing.xs }]}>Tap + below to add one.</Text>
+            </View>
+          )
+        }
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }

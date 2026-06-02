@@ -34,3 +34,17 @@ export const text = {
   muted: { fontSize: 13, color: colors.textMuted },
   cta: { fontSize: 16, fontWeight: '600' as const, color: colors.bg },
 };
+
+// Card elevation. iOS reads shadow*, Android reads elevation — set both.
+export const shadow = {
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+} as const;
+
+// Dark scrim drawn under text laid over photos so titles stay legible.
+export const overlay = 'rgba(15,23,42,0.85)'; // colors.bg @ 85%

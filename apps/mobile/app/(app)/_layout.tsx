@@ -1,27 +1,23 @@
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
-import { colors } from '../../utils/theme';
-
-function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
-  return (
-    <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{icon}</Text>
-  );
-}
+import { View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, shadow } from '../../utils/theme';
 
 function PlusIcon() {
   return (
     <View
       style={{
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: -12,
+        marginTop: -16,
+        ...shadow.card,
       }}
     >
-      <Text style={{ fontSize: 28, fontWeight: '700', color: colors.bg }}>+</Text>
+      <Ionicons name="add" size={30} color={colors.bg} />
     </View>
   );
 }
@@ -45,10 +41,12 @@ export default function AppTabsLayout() {
         name="index"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ focused }) => <TabIcon icon="📍" focused={focused} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
+          ),
         }}
       />
-<Tabs.Screen
+      <Tabs.Screen
         name="submit"
         options={{
           title: 'Submit',
@@ -60,7 +58,9 @@ export default function AppTabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon icon="👤" focused={focused} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
