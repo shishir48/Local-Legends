@@ -59,13 +59,15 @@ export const radius = {
   pill: 999,
 };
 
+// Spacing scales with screen width too, so paddings/gaps stay proportional
+// across small and large phones (not just font sizes).
 export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
+  xs: rf(4),
+  sm: rf(8),
+  md: rf(12),
+  lg: rf(16),
+  xl: rf(24),
+  xxl: rf(32),
 };
 
 export const text = {
