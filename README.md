@@ -1,41 +1,40 @@
 # 📍 Local Legend
 
-A community-voted hidden gems finder. Submit underrated cafés, parks, shops, bars, and art spaces — the community votes them to the top.
+Community-voted hidden gems finder. Submit underrated cafés, parks, shops, bars, and art spaces — the community votes them to the top.
 
-Built as a portfolio project to exercise the full-stack mobile loop: auth, CRUD, an atomic voting system, image uploads, map integration, and a deployed REST API.
+Portfolio project exercising the full-stack mobile loop: auth, CRUD, atomic voting, image uploads, maps, and a deployed REST API.
 
 ## Stack
 
-**Mobile** — React Native (Expo SDK 51) + TypeScript, Expo Router, TanStack Query, Zustand, react-hook-form + Zod, react-native-maps, expo-image-picker, expo-location, expo-secure-store.
+**Mobile** — React Native (Expo SDK 54) + TypeScript, Expo Router, TanStack Query, Zustand, react-hook-form + Zod, react-native-maps, expo-image-picker, expo-location, expo-secure-store. Ships OTA via EAS Update.
 
-**Backend** — Node.js + Express + TypeScript, MongoDB Atlas via Mongoose, JWT auth with bcrypt, Zod validation, Cloudinary photo uploads via streaming, express-rate-limit.
+**Backend** — Node.js + Express + TypeScript, MongoDB Atlas (Mongoose), JWT auth (bcrypt), Zod validation, Cloudinary uploads, express-rate-limit, Google Places autocomplete.
 
-**Infra** — MongoDB Atlas M0, Cloudinary, Railway-ready, GitHub Actions for lint/typecheck.
+**Infra** — MongoDB Atlas M0, Cloudinary, DigitalOcean droplet (pm2). GitHub Actions: CI lint/typecheck + auto-deploy API to the droplet on push to `main`.
 
-## Project structure
+## Structure
 
 ```
 local-legend/
 ├── apps/
-│   ├── mobile/   # Expo app (5 screens, file-based routing)
-│   └── server/   # Express API (15 endpoints)
+│   ├── mobile/   # Expo app (6 screens, file-based routing)
+│   └── server/   # Express API
 └── README.md
 ```
 
 ## Quick start
 
-### Backend
+**Backend**
 
 ```bash
 cd apps/server
-cp .env.example .env
-# Fill in MONGO_URI, JWT_SECRET, and Cloudinary keys
+cp .env.example .env   # set MONGO_URI, JWT_SECRET, Cloudinary + Google Maps keys
 npm install
-npm run seed   # 3 users + 12 gems
-npm run dev    # http://localhost:4000
+npm run seed           # 3 users + 12 gems
+npm run dev            # http://localhost:4000
 ```
 
-### Mobile
+**Mobile**
 
 ```bash
 cd apps/mobile
@@ -43,38 +42,41 @@ npm install
 npx expo start   # scan QR with Expo Go
 ```
 
-If running on a phone (not simulator), set `extra.apiUrl` in `app.json` to your machine's LAN IP, e.g. `http://192.168.0.4:4000`.
+API URL defaults to `https://shishir.cloud`. Override with the `API_URL` env var (e.g. your LAN IP `http://192.168.0.4:4000`) when running against a local server.
 
-## Notable design choices
+## Design choices
 
-**Atomic voting without transactions.** Each gem stores a `votedBy` array of user ObjectIds plus a `voteCount` integer. Voting is a single `findByIdAndUpdate` with `$addToSet` (or `$pull`) plus `$inc`. `$addToSet` enforces uniqueness at the operator level — concurrent toggles cannot create duplicate votes, and no separate collection or transaction is needed at this scale.
+**Atomic voting, no transactions.** Each gem holds a `votedBy` array of user ids plus a `voteCount`. A vote is one `findByIdAndUpdate` with `$addToSet`/`$pull` + `$inc`. `$addToSet` enforces uniqueness at the operator level — concurrent toggles can't duplicate votes, no transaction needed at this scale.
 
-**GeoJSON + 2dsphere index.** `location` is stored as `{ type: "Point", coordinates: [lng, lat] }` with a `2dsphere` index. The `GET /api/gems/nearby` endpoint uses MongoDB's native `$near` operator with `$maxDistance` in metres.
+**GeoJSON + 2dsphere.** `location` stored as `{ type: "Point", coordinates: [lng, lat] }` with a `2dsphere` index. `GET /api/gems/nearby` uses `$near` + `$maxDistance` (metres).
 
-**Optimistic vote UI.** The mobile `useVote` hook wraps `useMutation` with `onMutate` (snapshot + immediate cache write), `onError` (rollback), and `onSettled` (invalidate + refetch). The vote button flips colour the instant the user taps, even on a slow network — and rolls back cleanly if the request fails.
+**Optimistic vote UI.** The `useVote` hook wraps `useMutation` with `onMutate` (snapshot + cache write), `onError` (rollback), `onSettled` (refetch). Button flips instantly, rolls back cleanly on failure.
 
-**Defence-in-depth on uploads.** Multer enforces MIME prefix and a 5MB cap before bytes leave memory. Cloudinary then validates allowed formats (JPG/PNG/WEBP) and resizes anything bigger than 1600px on the longest edge with `crop: 'limit'` so we never upscale.
+**Defence-in-depth uploads.** Multer enforces MIME prefix + 5MB cap before bytes leave memory. Cloudinary validates formats (JPG/PNG/WEBP) and limits to 1600px longest edge (`crop: 'limit'`, no upscaling).
 
-**Token storage on mobile.** JWT lives in `expo-secure-store` (Keychain on iOS, EncryptedSharedPreferences on Android). On a 401 from the API, the auth store self-clears so the routing layout redirects to login.
+**Secure token storage.** JWT lives in `expo-secure-store` (Keychain / EncryptedSharedPreferences). On a 401 the auth store self-clears and routing redirects to login.
 
 ## API
 
-| Method | Endpoint                  | Description                            |
-| ------ | ------------------------- | -------------------------------------- |
-| POST   | `/api/auth/register`      | Create account, returns JWT            |
-| POST   | `/api/auth/login`         | Sign in, returns JWT                   |
-| GET    | `/api/auth/me`            | Logged-in user profile                 |
-| GET    | `/api/gems`               | Paginated list, filter + sort          |
-| GET    | `/api/gems/nearby`        | Gems near `lat`/`lng` within `radius`  |
-| GET    | `/api/gems/:id`           | Single gem with `hasVoted` for viewer  |
-| POST   | `/api/gems`               | Submit a gem (multipart/form-data)     |
-| PATCH  | `/api/gems/:id`           | Edit a gem (owner only)                |
-| DELETE | `/api/gems/:id`           | Soft-delete (owner only)               |
-| POST   | `/api/gems/:id/vote`      | Toggle upvote (idempotent, atomic)     |
-| GET    | `/api/users/:id/gems`     | Submissions + total upvotes received   |
-| PATCH  | `/api/users/me`           | Update display name / avatar           |
-| GET    | `/api/categories`         | Static category list with emoji        |
-| GET    | `/health`                 | Health check                           |
+| Method | Endpoint                | Description                           |
+| ------ | ----------------------- | ------------------------------------- |
+| POST   | `/api/auth/register`    | Create account, returns JWT           |
+| POST   | `/api/auth/login`       | Sign in, returns JWT                  |
+| GET    | `/api/auth/me`          | Logged-in user profile                |
+| GET    | `/api/gems`             | Paginated list, filter + sort         |
+| GET    | `/api/gems/nearby`      | Gems near `lat`/`lng` within `radius` |
+| GET    | `/api/gems/:id`         | Single gem with `hasVoted` for viewer |
+| POST   | `/api/gems`             | Submit a gem (multipart/form-data)    |
+| PATCH  | `/api/gems/:id`         | Edit a gem (owner only)               |
+| DELETE | `/api/gems/:id`         | Soft-delete (owner only)              |
+| POST   | `/api/gems/:id/vote`    | Toggle upvote (idempotent, atomic)    |
+| GET    | `/api/users/:id/gems`   | Submissions + total upvotes received  |
+| PATCH  | `/api/users/me`         | Update display name / avatar          |
+| GET    | `/api/categories`       | Static category list with emoji       |
+| GET    | `/api/places/autocomplete` | Google Places autocomplete         |
+| POST   | `/api/logs`             | Client log ingest (rate-limited)      |
+| GET    | `/api/logs`             | Read logs (admin only)                |
+| GET    | `/health`               | Health check                          |
 
 ## License
 

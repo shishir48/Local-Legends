@@ -16,7 +16,7 @@ import logsRoutes from './routes/logs';
 export function createApp() {
   const app = express();
 
-  app.set('trust proxy', 1); // honour X-Forwarded-For from Railway/Cloudflare
+  app.set('trust proxy', 1); // honour X-Forwarded-For from reverse proxy / Cloudflare
 
   app.use(helmet());
   app.use(compression());
