@@ -6,19 +6,21 @@ import { useAuthStore } from '../../stores/authStore';
 import { useUserGems } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
+import { AmbientGlow } from '../../components/AmbientGlow';
 import { categoryEmoji, formatVotes } from '../../utils/format';
-import { colors, radius, shadow, spacing, text } from '../../utils/theme';
+import { colors, glass, radius, spacing, text } from '../../utils/theme';
 
 function StatCard({ value, label }: { value: string | number; label: string }) {
   return (
     <View
       style={{
         flex: 1,
-        backgroundColor: colors.surface,
+        backgroundColor: glass.fill,
+        borderWidth: 1,
+        borderColor: glass.border,
         padding: spacing.md,
-        borderRadius: radius.md,
+        borderRadius: radius.lg,
         alignItems: 'center',
-        ...shadow.card,
       }}
     >
       <Text style={[text.h2, { color: colors.primary }]}>{value}</Text>
@@ -107,6 +109,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(g) => g.id}

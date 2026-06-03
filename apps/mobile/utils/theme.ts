@@ -1,5 +1,5 @@
 export const colors = {
-  bg: '#0F172A',
+  bg: '#0B1120',          // deeper navy so the neon wash reads
   surface: '#1E293B',
   surfaceAlt: '#334155',
   border: '#475569',
@@ -7,9 +7,32 @@ export const colors = {
   textMuted: '#94A3B8',
   primary: '#F59E0B',
   primarySoft: '#FCD34D',
+  accent: '#EC4899',      // pink, used only for the ambient neon wash
   danger: '#EF4444',
   success: '#10B981',
 };
+
+// Faux-glass surfaces — translucent fills + hairline highlight borders.
+// Pure RN colors (no expo-blur), so everything ships over EAS Update.
+export const glass = {
+  fill: 'rgba(30,41,59,0.55)',
+  border: 'rgba(255,255,255,0.08)',
+  fillStrong: 'rgba(15,23,42,0.60)',
+  amberFill: 'rgba(245,158,11,0.10)',
+  amberBorder: 'rgba(245,158,11,0.34)',
+} as const;
+
+// Colored glow. iOS honours shadowColor; Android elevation falls back to a
+// neutral shadow but the amber border keeps the effect legible.
+export const glow = {
+  amber: {
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+} as const;
 
 export const radius = {
   sm: 6,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Controller, type Control, type FieldValues, type Path } from 'react-hook-form';
-import { colors, radius, spacing, text } from '../utils/theme';
+import { colors, glass, radius, spacing, text } from '../utils/theme';
 
 interface FieldProps<T extends FieldValues> extends Omit<TextInputProps, 'value' | 'onChangeText'> {
   control: Control<T>;
@@ -32,10 +32,10 @@ export function Field<T extends FieldValues>({
             placeholderTextColor={colors.textMuted}
             style={[
               {
-                backgroundColor: colors.surface,
+                backgroundColor: glass.fill,
                 color: colors.text,
                 borderWidth: 1,
-                borderColor: error ? colors.danger : colors.border,
+                borderColor: error ? colors.danger : glass.border,
                 borderRadius: radius.md,
                 paddingVertical: spacing.md,
                 paddingHorizontal: spacing.lg,

@@ -9,10 +9,11 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
 import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSearchField';
+import { AmbientGlow } from '../../components/AmbientGlow';
 import { gemsApi, type Gem } from '../../services/api';
 import { logger } from '../../services/logger';
 import { useCategories } from '../../hooks/useGems';
-import { colors, radius, spacing, text } from '../../utils/theme';
+import { colors, glass, radius, spacing, text } from '../../utils/theme';
 
 const SubmitSchema = z.object({
   name: z.string().min(1, 'Search and select a business'),
@@ -120,6 +121,7 @@ export default function SubmitScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{ padding: spacing.xl }}
@@ -141,8 +143,10 @@ export default function SubmitScreen() {
           {place && (
             <View
               style={{
-                backgroundColor: colors.surface,
-                borderRadius: radius.md,
+                backgroundColor: glass.fill,
+                borderWidth: 1,
+                borderColor: glass.border,
+                borderRadius: radius.lg,
                 padding: spacing.md,
                 marginBottom: spacing.lg,
               }}
@@ -163,8 +167,8 @@ export default function SubmitScreen() {
                   key={c.id}
                   onPress={() => setValue('category', c.id, { shouldValidate: true })}
                   style={{
-                    backgroundColor: isActive ? colors.primary : colors.surface,
-                    borderColor: isActive ? colors.primary : colors.border,
+                    backgroundColor: isActive ? colors.primary : glass.fill,
+                    borderColor: isActive ? colors.primary : glass.border,
                     borderWidth: 1,
                     paddingHorizontal: spacing.md,
                     paddingVertical: spacing.sm,
@@ -202,10 +206,10 @@ export default function SubmitScreen() {
           <Pressable
             onPress={pickPhoto}
             style={{
-              backgroundColor: colors.surface,
-              borderRadius: radius.md,
+              backgroundColor: glass.fill,
+              borderRadius: radius.lg,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: glass.border,
               padding: spacing.md,
               alignItems: 'center',
               marginBottom: spacing.lg,

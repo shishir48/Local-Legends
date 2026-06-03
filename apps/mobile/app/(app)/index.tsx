@@ -7,6 +7,7 @@ import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { CityPickerModal } from '../../components/CityPickerModal';
+import { AmbientGlow } from '../../components/AmbientGlow';
 import { colors, spacing, text } from '../../utils/theme';
 
 const CITY_KEY = 'll.city';
@@ -114,6 +115,7 @@ export default function FeedScreen() {
   if (gems.isLoading) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+        <AmbientGlow />
         {header}
         <View style={{ paddingHorizontal: spacing.lg }}>
           <GemCardSkeleton />
@@ -128,10 +130,11 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
       <FlatList
         data={items}
         keyExtractor={(g) => g.id}
-        renderItem={({ item }) => <GemCard gem={item} />}
+        renderItem={({ item, index }) => <GemCard gem={item} highlight={index === 0} />}
         ListHeaderComponent={header}
         ListEmptyComponent={
           gems.isError ? (

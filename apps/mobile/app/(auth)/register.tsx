@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { Link } from 'expo-router';
 import { Pressable, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { AxiosError } from 'axios';
 import { Field } from '../../components/Field';
+import { AmbientGlow } from '../../components/AmbientGlow';
 import { useRegister } from '../../hooks/useAuth';
 import { colors, radius, spacing, text } from '../../utils/theme';
 
@@ -27,6 +29,7 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1, padding: spacing.xl, justifyContent: 'center' }}
@@ -64,7 +67,9 @@ export default function RegisterScreen() {
 
         {register.isError ? (
           <Text style={[text.muted, { color: colors.danger, marginBottom: spacing.md }]}>
-            That email might already be registered.
+            {(register.error as AxiosError)?.response?.status === 409
+              ? 'That email is already registered.'
+              : 'Something went wrong. Please try again.'}
           </Text>
         ) : null}
 

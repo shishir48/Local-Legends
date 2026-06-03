@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text } from 'react-native';
 import type { Category } from '../services/api';
-import { colors, radius, spacing } from '../utils/theme';
+import { colors, glass, radius, spacing } from '../utils/theme';
 
 interface Props {
   categories: Category[];
@@ -23,13 +23,13 @@ export function CategoryFilter({ categories, active, onChange }: Props) {
             key={c.id ?? 'all'}
             onPress={() => onChange(c.id)}
             style={{
-              backgroundColor: isActive ? colors.primary : colors.surface,
+              backgroundColor: isActive ? colors.primary : glass.fill,
               paddingHorizontal: spacing.md,
               paddingVertical: spacing.sm,
               borderRadius: radius.pill,
               marginRight: spacing.sm,
               borderWidth: 1,
-              borderColor: isActive ? colors.primary : colors.border,
+              borderColor: isActive ? colors.primary : glass.border,
             }}
           >
             <Text style={{ color: isActive ? colors.bg : colors.text, fontWeight: '600' }}>

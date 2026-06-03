@@ -10,3 +10,4 @@ android/
 .tsbuildinfo
 coverage/
 google-service-account.json
+.superpowers/

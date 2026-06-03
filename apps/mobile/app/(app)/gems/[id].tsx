@@ -3,8 +3,9 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useGem } from '../../../hooks/useGems';
 import { VoteButton } from '../../../components/VoteButton';
+import { AmbientGlow } from '../../../components/AmbientGlow';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
-import { colors, radius, spacing, text } from '../../../utils/theme';
+import { colors, glass, radius, spacing, text } from '../../../utils/theme';
 
 export default function GemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +33,9 @@ export default function GemDetailScreen() {
   const [lng, lat] = g.location.coordinates;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
       <Stack.Screen options={{ title: g.name }} />
 
       {g.photoUrl ? (
@@ -51,7 +54,7 @@ export default function GemDetailScreen() {
 
         <Text style={[text.body, { marginTop: spacing.lg, lineHeight: 22 }]}>{g.description}</Text>
 
-        <View style={{ marginTop: spacing.lg, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.md }}>
+        <View style={{ marginTop: spacing.lg, padding: spacing.md, backgroundColor: glass.fill, borderWidth: 1, borderColor: glass.border, borderRadius: radius.lg }}>
           <Text style={text.muted}>Address</Text>
           <Text style={[text.body, { marginTop: spacing.xs }]}>{g.address}</Text>
         </View>
@@ -65,8 +68,10 @@ export default function GemDetailScreen() {
           style={({ pressed }) => ({
             marginTop: spacing.lg,
             padding: spacing.md,
-            backgroundColor: pressed ? colors.surfaceAlt : colors.surface,
-            borderRadius: radius.md,
+            backgroundColor: pressed ? glass.fillStrong : glass.fill,
+            borderWidth: 1,
+            borderColor: glass.amberBorder,
+            borderRadius: radius.lg,
             alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'center',
@@ -86,6 +91,7 @@ export default function GemDetailScreen() {
           <VoteButton gemId={g.id} voteCount={g.voteCount} hasVoted={!!g.hasVoted} />
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

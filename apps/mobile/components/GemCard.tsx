@@ -3,94 +3,92 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Gem } from '../services/api';
 import { categoryEmoji, formatVotes } from '../utils/format';
-import { colors, overlay, radius, shadow, spacing, text } from '../utils/theme';
+import { colors, glass, glow, radius, spacing, text } from '../utils/theme';
 
-export function GemCard({ gem }: { gem: Gem }) {
+interface Props {
+  gem: Gem;
+  /** When true the card gets amber glass + glow + a #1 badge (top of the feed). */
+  highlight?: boolean;
+}
+
+export function GemCard({ gem, highlight = false }: Props) {
+  const area = gem.city?.trim() || '';
+
   return (
     <Link href={`/gems/${gem.id}`} asChild>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}
-        style={({ pressed }) => ({
-          backgroundColor: colors.surface,
-          borderRadius: radius.lg,
-          marginBottom: spacing.md,
-          overflow: 'hidden',
-          transform: [{ scale: pressed ? 0.985 : 1 }],
-          ...shadow.card,
-        })}
+        style={({ pressed }) => [
+          {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            padding: spacing.md,
+            borderRadius: radius.lg,
+            marginBottom: spacing.md,
+            backgroundColor: highlight ? glass.amberFill : glass.fill,
+            borderWidth: 1,
+            borderColor: highlight ? glass.amberBorder : glass.border,
+            transform: [{ scale: pressed ? 0.985 : 1 }],
+          },
+          highlight && glow.amber,
+        ]}
       >
-        <View>
-          {gem.photoUrl ? (
-            <Image
-              source={{ uri: gem.photoUrl }}
-              style={{ width: '100%', height: 180, backgroundColor: colors.surfaceAlt }}
-            />
-          ) : (
-            <View
-              style={{
-                height: 180,
-                backgroundColor: colors.surfaceAlt,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ fontSize: 52 }}>{categoryEmoji(gem.category)}</Text>
-            </View>
-          )}
+        {/* Thumbnail: photo if present, else a tinted category tile */}
+        {gem.photoUrl ? (
+          <Image source={{ uri: gem.photoUrl }} style={thumb} />
+        ) : (
+          <View style={[thumb, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ fontSize: 26 }}>{categoryEmoji(gem.category)}</Text>
+          </View>
+        )}
 
-          {/* Scrim keeps the title readable over any photo (solid View — no
-              native gradient module, so this ships over-the-air) */}
-          <View
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: overlay,
-              justifyContent: 'flex-end',
-              padding: spacing.md,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, marginRight: spacing.xs }}>{categoryEmoji(gem.category)}</Text>
-              <Text style={[text.h2, { flex: 1, fontSize: 18 }]} numberOfLines={1}>
-                {gem.name}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[text.body, { fontWeight: '700', fontSize: 15.5 }]} numberOfLines={1}>
+            {gem.name}
+          </Text>
+          <Text style={[text.muted, { marginTop: 3 }]} numberOfLines={1}>
+            {categoryEmoji(gem.category)} {gem.category}
+            {area ? ` · ${area}` : ''}
+          </Text>
+          {highlight && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+              <Text style={{ fontSize: 11 }}>🔥</Text>
+              <Text style={[text.muted, { marginLeft: 4, color: colors.primarySoft, fontWeight: '700', fontSize: 11 }]}>
+                Top gem here
               </Text>
             </View>
-          </View>
-
-          {/* Vote chip floats top-right */}
-          <View
-            style={{
-              position: 'absolute',
-              top: spacing.sm,
-              right: spacing.sm,
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: overlay,
-              paddingHorizontal: spacing.sm,
-              paddingVertical: 4,
-              borderRadius: radius.pill,
-            }}
-          >
-            <Ionicons name="arrow-up" size={14} color={colors.primary} style={{ marginRight: 3 }} />
-            <Text style={[text.body, { fontWeight: '700', fontSize: 13 }]}>{formatVotes(gem.voteCount)}</Text>
-          </View>
+          )}
         </View>
 
-        <View style={{ padding: spacing.lg, paddingTop: spacing.md }}>
-          <Text style={text.muted} numberOfLines={2}>
-            {gem.description}
+        {/* Vote pill */}
+        <View
+          style={{
+            minWidth: 50,
+            alignItems: 'center',
+            backgroundColor: glass.fillStrong,
+            borderWidth: 1,
+            borderColor: glass.border,
+            borderRadius: radius.md,
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.xs,
+          }}
+        >
+          <Ionicons name="arrow-up" size={14} color={colors.primary} />
+          <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: 15, marginTop: 1 }}>
+            {formatVotes(gem.voteCount)}
           </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
-            <Ionicons name="location-outline" size={13} color={colors.textMuted} style={{ marginRight: 4 }} />
-            <Text style={[text.muted, { fontSize: 12, flex: 1 }]} numberOfLines={1}>
-              {gem.address}
-            </Text>
-          </View>
         </View>
       </Pressable>
     </Link>
   );
 }
+
+const thumb = {
+  width: 60,
+  height: 60,
+  borderRadius: radius.md,
+  backgroundColor: colors.surfaceAlt,
+  flexShrink: 0,
+} as const;

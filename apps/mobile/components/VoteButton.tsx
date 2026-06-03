@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useVote } from '../hooks/useVote';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'expo-router';
-import { colors, radius, spacing } from '../utils/theme';
+import { colors, glass, glow, radius, spacing } from '../utils/theme';
 import { formatVotes } from '../utils/format';
 
 interface Props {
@@ -32,19 +32,22 @@ export function VoteButton({ gemId, voteCount, hasVoted }: Props) {
       accessibilityRole="button"
       accessibilityState={{ selected: hasVoted, disabled: vote.isPending }}
       accessibilityLabel={hasVoted ? `Voted, ${voteCount} votes. Tap to remove vote` : `Upvote, ${voteCount} votes`}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: spacing.md,
-        paddingHorizontal: spacing.xl,
-        borderRadius: radius.pill,
-        backgroundColor: hasVoted ? colors.primary : colors.surface,
-        borderWidth: 2,
-        borderColor: hasVoted ? colors.primary : colors.border,
-        transform: [{ scale: pressed ? 0.96 : 1 }],
-        opacity: pressed ? 0.85 : 1,
-      })}
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.xl,
+          borderRadius: radius.pill,
+          backgroundColor: hasVoted ? colors.primary : glass.fill,
+          borderWidth: 2,
+          borderColor: hasVoted ? colors.primary : glass.border,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
+          opacity: pressed ? 0.85 : 1,
+        },
+        hasVoted && glow.amber,
+      ]}
     >
       <Ionicons
         name={hasVoted ? 'arrow-up-circle' : 'arrow-up-circle-outline'}

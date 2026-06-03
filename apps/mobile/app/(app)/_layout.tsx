@@ -30,8 +30,10 @@ export default function AppTabsLayout() {
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: '700' },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: 'rgba(15,23,42,0.94)', // glassy bar
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          borderTopWidth: 1,
+          elevation: 0,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,

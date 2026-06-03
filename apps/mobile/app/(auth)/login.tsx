@@ -6,6 +6,7 @@ import { Pressable, Text, View, KeyboardAvoidingView, Platform } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { Field } from '../../components/Field';
+import { AmbientGlow } from '../../components/AmbientGlow';
 import { useLogin } from '../../hooks/useAuth';
 import { colors, radius, spacing, text } from '../../utils/theme';
 
@@ -27,6 +28,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AmbientGlow />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1, padding: spacing.xl, justifyContent: 'center' }}

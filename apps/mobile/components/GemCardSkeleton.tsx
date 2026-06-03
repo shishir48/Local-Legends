@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, View } from 'react-native';
-import { colors, radius, spacing } from '../utils/theme';
+import { Animated, View, type DimensionValue } from 'react-native';
+import { glass, radius, spacing } from '../utils/theme';
 
 export function GemCardSkeleton() {
   const opacity = useRef(new Animated.Value(0.4)).current;
@@ -16,22 +16,34 @@ export function GemCardSkeleton() {
     return () => loop.stop();
   }, [opacity]);
 
+  const bar = (w: DimensionValue, h: number) => ({
+    height: h,
+    width: w,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderRadius: 4,
+  });
+
   return (
     <Animated.View
       style={{
-        backgroundColor: colors.surface,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.md,
         borderRadius: radius.lg,
         marginBottom: spacing.md,
-        overflow: 'hidden',
+        backgroundColor: glass.fill,
+        borderWidth: 1,
+        borderColor: glass.border,
         opacity,
       }}
     >
-      <View style={{ height: 160, backgroundColor: colors.surfaceAlt }} />
-      <View style={{ padding: spacing.lg }}>
-        <View style={{ height: 18, backgroundColor: colors.surfaceAlt, borderRadius: 4, marginBottom: spacing.sm, width: '60%' }} />
-        <View style={{ height: 12, backgroundColor: colors.surfaceAlt, borderRadius: 4, marginBottom: spacing.xs, width: '90%' }} />
-        <View style={{ height: 12, backgroundColor: colors.surfaceAlt, borderRadius: 4, width: '40%' }} />
+      <View style={{ width: 60, height: 60, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.10)' }} />
+      <View style={{ flex: 1, gap: spacing.sm }}>
+        <View style={bar('70%', 15)} />
+        <View style={bar('45%', 11)} />
       </View>
+      <View style={{ width: 50, height: 46, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.08)' }} />
     </Animated.View>
   );
 }
