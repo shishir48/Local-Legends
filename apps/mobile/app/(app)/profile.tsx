@@ -8,7 +8,7 @@ import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { categoryEmoji, formatVotes } from '../../utils/format';
-import { colors, glass, radius, spacing, text } from '../../utils/theme';
+import { colors, glass, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 function StatCard({ value, label }: { value: string | number; label: string }) {
   return (
@@ -130,7 +130,7 @@ export default function ProfileScreen() {
             </View>
           )
         }
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>

@@ -8,7 +8,7 @@ import type { AxiosError } from 'axios';
 import { Field } from '../../components/Field';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { useRegister } from '../../hooks/useAuth';
-import { colors, radius, spacing, text } from '../../utils/theme';
+import { colors, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const RegisterSchema = z.object({
   displayName: z.string().min(1, 'Required').max(50),
@@ -32,7 +32,7 @@ export default function RegisterScreen() {
       <AmbientGlow />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1, padding: spacing.xl, justifyContent: 'center' }}
+        style={{ flex: 1, padding: spacing.xl, justifyContent: 'center', width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
       >
         <Text style={[text.h1, { marginBottom: spacing.sm }]}>Create account</Text>
         <Text style={[text.muted, { marginBottom: spacing.xl }]}>

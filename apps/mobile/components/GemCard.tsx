@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Gem } from '../services/api';
 import { categoryEmoji, formatVotes } from '../utils/format';
-import { colors, glass, glow, radius, spacing, text } from '../utils/theme';
+import { colors, glass, glow, radius, rf, spacing, text } from '../utils/theme';
 
 interface Props {
   gem: Gem;
@@ -19,33 +19,31 @@ export function GemCard({ gem, highlight = false }: Props) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}
-        style={({ pressed }) => [
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.md,
-            padding: spacing.md,
-            borderRadius: radius.lg,
-            marginBottom: spacing.md,
-            backgroundColor: highlight ? glass.amberFill : glass.fill,
-            borderWidth: 1,
-            borderColor: highlight ? glass.amberBorder : glass.border,
-            transform: [{ scale: pressed ? 0.985 : 1 }],
-          },
-          highlight && glow.amber,
-        ]}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.md,
+          padding: spacing.md,
+          borderRadius: radius.lg,
+          marginBottom: spacing.md,
+          backgroundColor: highlight ? glass.amberFill : glass.fill,
+          borderWidth: 1,
+          borderColor: highlight ? glass.amberBorder : glass.border,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          ...(highlight ? glow.amber : null),
+        })}
       >
         {/* Thumbnail: photo if present, else a tinted category tile */}
         {gem.photoUrl ? (
           <Image source={{ uri: gem.photoUrl }} style={thumb} />
         ) : (
           <View style={[thumb, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ fontSize: 26 }}>{categoryEmoji(gem.category)}</Text>
+            <Text style={{ fontSize: rf(26) }}>{categoryEmoji(gem.category)}</Text>
           </View>
         )}
 
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[text.body, { fontWeight: '700', fontSize: 15.5 }]} numberOfLines={1}>
+          <Text style={[text.body, { fontWeight: '700', fontSize: rf(15) }]} numberOfLines={1}>
             {gem.name}
           </Text>
           <Text style={[text.muted, { marginTop: 3 }]} numberOfLines={1}>
@@ -65,7 +63,7 @@ export function GemCard({ gem, highlight = false }: Props) {
         {/* Vote pill */}
         <View
           style={{
-            minWidth: 50,
+            minWidth: rf(50),
             alignItems: 'center',
             backgroundColor: glass.fillStrong,
             borderWidth: 1,
@@ -75,8 +73,8 @@ export function GemCard({ gem, highlight = false }: Props) {
             paddingHorizontal: spacing.xs,
           }}
         >
-          <Ionicons name="arrow-up" size={14} color={colors.primary} />
-          <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: 15, marginTop: 1 }}>
+          <Ionicons name="arrow-up" size={rf(14)} color={colors.primary} />
+          <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: rf(15), marginTop: 1 }}>
             {formatVotes(gem.voteCount)}
           </Text>
         </View>
@@ -86,8 +84,8 @@ export function GemCard({ gem, highlight = false }: Props) {
 }
 
 const thumb = {
-  width: 60,
-  height: 60,
+  width: rf(60),
+  height: rf(60),
   borderRadius: radius.md,
   backgroundColor: colors.surfaceAlt,
   flexShrink: 0,

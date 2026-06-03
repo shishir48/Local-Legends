@@ -8,7 +8,7 @@ import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { CityPickerModal } from '../../components/CityPickerModal';
 import { AmbientGlow } from '../../components/AmbientGlow';
-import { colors, spacing, text } from '../../utils/theme';
+import { colors, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const CITY_KEY = 'll.city';
 
@@ -146,7 +146,7 @@ export default function FeedScreen() {
             <EmptyFeed />
           )
         }
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

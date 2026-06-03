@@ -13,7 +13,7 @@ import { AmbientGlow } from '../../components/AmbientGlow';
 import { gemsApi, type Gem } from '../../services/api';
 import { logger } from '../../services/logger';
 import { useCategories } from '../../hooks/useGems';
-import { colors, glass, radius, spacing, text } from '../../utils/theme';
+import { colors, glass, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const SubmitSchema = z.object({
   name: z.string().min(1, 'Search and select a business'),
@@ -124,7 +124,7 @@ export default function SubmitScreen() {
       <AmbientGlow />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ padding: spacing.xl }}
+          contentContainerStyle={{ padding: spacing.xl, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
