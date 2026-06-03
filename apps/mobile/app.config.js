@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Local Legend',
     slug: 'local-legend',
-    version: '1.1.9',
+    version: '1.1.10',
     orientation: 'portrait',
     scheme: 'locallegend',
     updates: {
@@ -71,7 +71,10 @@ module.exports = {
     ],
 
     extra: {
-      apiUrl: process.env.API_URL || 'http://192.168.18.230:4000',
+      // Default to production so OTA bundles (exported without API_URL) and
+      // any build that forgets the env still hit the live API. For local dev,
+      // run with API_URL=http://<your-LAN-ip>:4000.
+      apiUrl: process.env.API_URL || 'https://shishir.cloud',
       eas: {
         projectId: '55c340e3-bae4-4dd8-ae7f-0c818bc45be9',
       },
