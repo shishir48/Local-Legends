@@ -16,23 +16,26 @@ interface Props {
   onSelect: (place: PlaceResult) => void;
   onClear: () => void;
   selected: PlaceResult | null;
+  city: string | null;
   error?: string;
 }
 
-export function PlacesSearchField({ onSelect, onClear, selected, error }: Props) {
+export function PlacesSearchField({ onSelect, onClear, selected, city, error }: Props) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const disabled = !city;
+
   const handleChange = (val: string) => {
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!val.trim()) { setSuggestions([]); return; }
+    if (!val.trim() || !city) { setSuggestions([]); return; }
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await placesApi.autocomplete(val.trim());
+        const data = await placesApi.autocomplete(val.trim(), city);
         setSuggestions(data.status === 'OK' ? data.predictions : []);
       } catch {
         setSuggestions([]);
@@ -93,10 +96,11 @@ export function PlacesSearchField({ onSelect, onClear, selected, error }: Props)
         <TextInput
           value={query}
           onChangeText={handleChange}
-          placeholder="Search business on map…"
+          editable={!disabled}
+          placeholder={disabled ? 'Pick a city first' : 'Search business on map…'}
           placeholderTextColor={colors.textMuted}
           autoCorrect={false}
-          style={{ flex: 1, color: colors.text, paddingVertical: spacing.sm }}
+          style={{ flex: 1, color: disabled ? colors.textMuted : colors.text, paddingVertical: spacing.sm }}
         />
         {loading && <ActivityIndicator size="small" color={colors.primary} />}
       </View>
