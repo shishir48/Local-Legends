@@ -5,7 +5,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(4000),
   MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 chars'),
-  JWT_EXPIRES_IN: z.string().default('24h'),
+  JWT_EXPIRES_IN: z.string().default('30d'),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
