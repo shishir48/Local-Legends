@@ -84,6 +84,13 @@ export default function LoginScreen() {
           </Link>
         </View>
 
+        <Link
+          href="/(auth)/forgot-password"
+          style={{ color: colors.primarySoft, fontWeight: '600', textAlign: 'center', marginTop: spacing.md }}
+        >
+          Forgot password?
+        </Link>
+
         <Text style={[text.muted, { textAlign: 'center', marginTop: spacing.xl, fontSize: 11 }]}>
           v{Constants.expoConfig?.version ?? '—'}
         </Text>
