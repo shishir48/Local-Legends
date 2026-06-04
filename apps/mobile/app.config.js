@@ -2,11 +2,15 @@ module.exports = {
   expo: {
     name: 'Local Legend',
     slug: 'local-legend',
-    version: '1.1.16',
+    version: '1.1.17',
     orientation: 'portrait',
     scheme: 'locallegend',
     updates: {
       url: 'https://u.expo.dev/55c340e3-bae4-4dd8-ae7f-0c818bc45be9',
+      // Wait up to 3s on launch for a newer OTA before falling back to the
+      // cached bundle, so updates apply on the first relaunch instead of the
+      // second. Native config — only takes effect in a new build, not via OTA.
+      fallbackToCacheTimeout: 3000,
     },
     // Pinned (not appVersion policy) so `version` can bump on every change
     // while OTA targeting stays constant. Existing installs were built at
