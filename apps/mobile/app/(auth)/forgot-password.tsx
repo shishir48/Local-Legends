@@ -15,7 +15,7 @@ type EmailInput = z.infer<typeof EmailSchema>;
 
 const ResetSchema = z.object({
   code: z.string().regex(/^\d{6}$/, 'Enter the 6-digit code'),
-  newPassword: z.string().min(8, 'At least 8 characters'),
+  newPassword: z.string().min(8, 'At least 8 characters').max(72, 'At most 72 characters'),
 });
 type ResetInput = z.infer<typeof ResetSchema>;
 
