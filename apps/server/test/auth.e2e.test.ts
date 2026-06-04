@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { app, auth, makeUser } from './helpers';
 import { User } from '../src/models/User';
+import { sendPasswordResetCode } from '../src/lib/email';
 
 const sentCodes: { to: string; code: string }[] = [];
 vi.mock('../src/lib/email', () => ({
@@ -190,6 +191,18 @@ describe('Password reset flow', () => {
       .post('/api/auth/reset-password')
       .send({ email: 'reset4@test.dev', code: realCode, newPassword: 'newpassword123' })
       .expect(400);
+  });
+
+  it('forgot-password still returns generic 200 when email delivery fails (no enumeration via 500)', async () => {
+    sentCodes.length = 0;
+    await makeUser({ email: 'reset6@test.dev', password: 'password123' });
+    vi.mocked(sendPasswordResetCode).mockRejectedValueOnce(new Error('resend down'));
+
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'reset6@test.dev' })
+      .expect(200);
+    expect(res.body.message).toMatch(/reset code/i);
   });
 
   it('reset-password with an expired code fails with 400', async () => {
