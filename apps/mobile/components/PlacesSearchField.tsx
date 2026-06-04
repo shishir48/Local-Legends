@@ -20,22 +20,32 @@ interface Props {
   error?: string;
 }
 
+// Lightweight session token (no extra dep) to group autocomplete + details
+// calls into one Google billing session.
+function newSessionToken(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function PlacesSearchField({ onSelect, onClear, selected, city, error }: Props) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pickError, setPickError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRef = useRef<string | null>(null);
 
   const disabled = !city;
 
   const handleChange = (val: string) => {
     setQuery(val);
+    setPickError(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!val.trim() || !city) { setSuggestions([]); return; }
+    if (!sessionRef.current) sessionRef.current = newSessionToken();
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await placesApi.autocomplete(val.trim(), city);
+        const data = await placesApi.autocomplete(val.trim(), city, sessionRef.current ?? undefined);
         setSuggestions(data.status === 'OK' ? data.predictions : []);
       } catch {
         setSuggestions([]);
@@ -45,10 +55,27 @@ export function PlacesSearchField({ onSelect, onClear, selected, city, error }: 
     }, 400);
   };
 
-  const handlePick = (prediction: PlacePrediction) => {
+  const handlePick = async (prediction: PlacePrediction) => {
     setSuggestions([]);
-    setQuery('');
-    onSelect(prediction.detail);
+    setPickError(false);
+    // Nominatim fallback returns detail inline; Google mode needs a details call.
+    if (prediction.detail) {
+      setQuery('');
+      sessionRef.current = null;
+      onSelect(prediction.detail);
+      return;
+    }
+    setLoading(true);
+    try {
+      const detail = await placesApi.details(prediction.place_id, sessionRef.current ?? undefined);
+      setQuery('');
+      sessionRef.current = null;
+      onSelect(detail);
+    } catch {
+      setPickError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (selected) {
@@ -138,7 +165,13 @@ export function PlacesSearchField({ onSelect, onClear, selected, city, error }: 
         </View>
       )}
 
-      {query.length > 1 && suggestions.length === 0 && !loading && (
+      {pickError && (
+        <Text style={[text.muted, { color: colors.danger, marginTop: spacing.xs }]}>
+          Couldn't load that place, try another.
+        </Text>
+      )}
+
+      {query.length > 1 && suggestions.length === 0 && !loading && !pickError && (
         <Text style={[text.muted, { color: colors.textMuted, marginTop: spacing.xs }]}>
           No results. Try a different name.
         </Text>
