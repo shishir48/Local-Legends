@@ -89,6 +89,10 @@ export const authApi = {
   login: (input: { email: string; password: string }) =>
     api.post<{ user: AuthUser; token: string }>('/api/auth/login', input).then((r) => r.data),
   me: () => api.get<AuthUser>('/api/auth/me').then((r) => r.data),
+  forgotPassword: (input: { email: string }) =>
+    api.post<{ message: string }>('/api/auth/forgot-password', input).then((r) => r.data),
+  resetPassword: (input: { email: string; code: string; newPassword: string }) =>
+    api.post<{ user: AuthUser; token: string }>('/api/auth/reset-password', input).then((r) => r.data),
 };
 
 export const gemsApi = {
