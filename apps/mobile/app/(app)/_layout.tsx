@@ -29,6 +29,7 @@ export default function AppTabsLayout() {
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: '700' },
+        headerTitleAlign: 'center', // center title on Android too (iOS default)
         tabBarStyle: {
           backgroundColor: 'rgba(15,23,42,0.94)', // glassy bar
           borderTopColor: 'rgba(255,255,255,0.08)',
