@@ -15,6 +15,16 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+const ForgotPasswordSchema = z.object({
+  email: z.string().email().toLowerCase(),
+});
+
+const ResetPasswordSchema = z.object({
+  email: z.string().email().toLowerCase(),
+  code: z.string().regex(/^\d{6}$/, 'Code must be 6 digits'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters').max(72),
+});
+
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const input = RegisterSchema.parse(req.body);
@@ -41,6 +51,26 @@ export async function me(req: Request, res: Response, next: NextFunction) {
     const user = await User.findById(req.user.id);
     if (!user) throw ApiError.notFound('User not found');
     res.json(user.toJSON());
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = ForgotPasswordSchema.parse(req.body);
+    await authService.requestPasswordReset(email);
+    res.json({ message: 'If that email exists, a reset code has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = ResetPasswordSchema.parse(req.body);
+    const result = await authService.resetPassword(input);
+    res.json(result);
   } catch (err) {
     next(err);
   }
