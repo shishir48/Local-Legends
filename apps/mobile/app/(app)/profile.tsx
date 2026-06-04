@@ -73,7 +73,7 @@ export default function ProfileScreen() {
 
       <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
         <StatCard value={items.length} label="Gems" />
-        <StatCard value={formatVotes(totalUpvotes)} label="Upvotes" />
+        <StatCard value={formatVotes(totalUpvotes)} label="Upvotes received" />
       </View>
 
       <Text style={[text.h2, { marginBottom: spacing.md }]}>Your gems</Text>
