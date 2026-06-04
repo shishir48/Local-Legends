@@ -65,7 +65,14 @@ export async function requestPasswordReset(email: string): Promise<void> {
   user.resetAttempts = 0;
   await user.save();
 
-  await sendPasswordResetCode(user.email, code);
+  // Never let a delivery failure propagate: a thrown error would turn the
+  // controller's generic 200 into a 500, leaking whether the email exists
+  // (enumeration). Log and swallow — the user can request a new code.
+  try {
+    await sendPasswordResetCode(user.email, code);
+  } catch (err) {
+    console.error('[auth] failed to send password reset email:', err);
+  }
 }
 
 export async function resetPassword(input: {
