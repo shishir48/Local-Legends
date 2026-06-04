@@ -24,3 +24,21 @@ export function useRegister() {
     },
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: authApi.forgotPassword,
+    onSuccess: () => logger.event('password_reset_requested'),
+  });
+}
+
+export function useResetPassword() {
+  const login = useAuthStore((s) => s.login);
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    onSuccess: async ({ token, user }) => {
+      await login(token, user);
+      logger.event('password_reset_completed', { userId: user.id });
+    },
+  });
+}

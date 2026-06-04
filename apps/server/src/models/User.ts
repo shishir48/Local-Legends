@@ -14,6 +14,9 @@ const UserSchema = new Schema(
     displayName: { type: String, required: true, trim: true, maxlength: 50 },
     avatarUrl: { type: String, default: null },
     isAdmin: { type: Boolean, default: false },
+    resetCodeHash: { type: String, default: null },
+    resetCodeExpires: { type: Date, default: null },
+    resetAttempts: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -26,6 +29,9 @@ UserSchema.set('toJSON', {
     ret.id = ret._id;
     delete ret._id;
     delete ret.passwordHash;
+    delete ret.resetCodeHash;
+    delete ret.resetCodeExpires;
+    delete ret.resetAttempts;
     return ret;
   },
 });
