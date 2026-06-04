@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app, auth, makeUser } from './helpers';
 
+
 describe('health', () => {
   it('reports ok', async () => {
     const res = await request(app).get('/health').expect(200);
@@ -99,5 +100,15 @@ describe('GET /api/auth/me', () => {
 
   it('rejects a malformed token with 401', async () => {
     await request(app).get('/api/auth/me').set(auth('garbage.token.here')).expect(401);
+  });
+});
+
+describe('User toJSON strips reset fields', () => {
+  it('never exposes resetCodeHash / resetCodeExpires / resetAttempts', async () => {
+    const u = await makeUser();
+    const res = await request(app).get('/api/auth/me').set(auth(u.token)).expect(200);
+    expect(res.body.resetCodeHash).toBeUndefined();
+    expect(res.body.resetCodeExpires).toBeUndefined();
+    expect(res.body.resetAttempts).toBeUndefined();
   });
 });
