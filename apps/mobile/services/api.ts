@@ -127,10 +127,10 @@ export interface PlacePrediction {
 }
 
 export const placesApi = {
-  autocomplete: (input: string) =>
+  autocomplete: (input: string, city?: string) =>
     api
       .get<{ predictions: PlacePrediction[]; status: string }>('/api/places/autocomplete', {
-        params: { input },
+        params: city ? { input, city } : { input },
       })
       .then((r) => r.data),
 };

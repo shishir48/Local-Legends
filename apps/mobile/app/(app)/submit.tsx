@@ -9,6 +9,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
 import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSearchField';
+import { CityPickerModal } from '../../components/CityPickerModal';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { gemsApi, type Gem } from '../../services/api';
 import { logger } from '../../services/logger';
@@ -36,6 +37,8 @@ export default function SubmitScreen() {
   const categories = useCategories();
   const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [place, setPlace] = useState<PlaceResult | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   const { control, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm<SubmitInput>({
     resolver: zodResolver(SubmitSchema),
@@ -49,6 +52,8 @@ export default function SubmitScreen() {
       reset({ name: '', category: '', description: '', address: '', city: '' });
       setPlace(null);
       setPhoto(null);
+      setCity(null);
+      setShowCityPicker(false);
     }, [])
   );
 
@@ -56,14 +61,23 @@ export default function SubmitScreen() {
     setPlace(p);
     setValue('name', p.name, { shouldValidate: true });
     setValue('address', p.address, { shouldValidate: true });
-    setValue('city', p.city, { shouldValidate: true });
+    // Store the user-picked city (canonical), not the place's extracted city,
+    // so the gem reliably appears under that city's feed filter.
+    setValue('city', city ?? p.city, { shouldValidate: true });
   };
 
   const handlePlaceClear = () => {
     setPlace(null);
     setValue('name', '', { shouldValidate: false });
     setValue('address', '', { shouldValidate: false });
-    setValue('city', '', { shouldValidate: false });
+  };
+
+  const selectCity = (chosen: string) => {
+    setCity(chosen);
+    setValue('city', chosen, { shouldValidate: true });
+    setShowCityPicker(false);
+    // A previously selected place may not belong to the new city — clear it.
+    handlePlaceClear();
   };
 
   const create = useMutation({
@@ -133,12 +147,37 @@ export default function SubmitScreen() {
             Share a place locals love.
           </Text>
 
+          <Text style={[text.muted, { marginBottom: spacing.xs }]}>City</Text>
+          <Pressable
+            onPress={() => setShowCityPicker(true)}
+            style={{
+              backgroundColor: glass.fill,
+              borderColor: city ? colors.success : glass.border,
+              borderWidth: 1,
+              borderRadius: radius.md,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.md,
+              marginBottom: spacing.lg,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: city ? colors.text : colors.textMuted, fontWeight: '600' }}>
+              {city ?? 'Select city'}
+            </Text>
+            <Text style={{ color: colors.textMuted }}>{city ? 'Change' : '▾'}</Text>
+          </Pressable>
+
           <PlacesSearchField
             selected={place}
             onSelect={handlePlaceSelect}
             onClear={handlePlaceClear}
+            city={city}
             error={errors.name?.message}
           />
+
+          {showCityPicker && <CityPickerModal onSelect={selectCity} />}
 
           {place && (
             <View
