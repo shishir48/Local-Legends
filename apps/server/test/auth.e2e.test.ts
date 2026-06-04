@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { app, auth, makeUser } from './helpers';
+import { User } from '../src/models/User';
 
 const sentCodes: { to: string; code: string }[] = [];
 vi.mock('../src/lib/email', () => ({
@@ -188,6 +189,24 @@ describe('Password reset flow', () => {
     await request(app)
       .post('/api/auth/reset-password')
       .send({ email: 'reset4@test.dev', code: realCode, newPassword: 'newpassword123' })
+      .expect(400);
+  });
+
+  it('reset-password with an expired code fails with 400', async () => {
+    sentCodes.length = 0;
+    await makeUser({ email: 'reset5@test.dev', password: 'password123' });
+    await request(app).post('/api/auth/forgot-password').send({ email: 'reset5@test.dev' }).expect(200);
+    const realCode = sentCodes.at(-1)!.code;
+
+    // Force the stored code to be expired.
+    await User.updateOne(
+      { email: 'reset5@test.dev' },
+      { $set: { resetCodeExpires: new Date(Date.now() - 1000) } }
+    );
+
+    await request(app)
+      .post('/api/auth/reset-password')
+      .send({ email: 'reset5@test.dev', code: realCode, newPassword: 'newpassword123' })
       .expect(400);
   });
 });

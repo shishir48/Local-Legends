@@ -81,7 +81,7 @@ export async function resetPassword(input: {
     !user ||
     !user.resetCodeHash ||
     !user.resetCodeExpires ||
-    user.resetCodeExpires.getTime() < Date.now() ||
+    user.resetCodeExpires.getTime() <= Date.now() ||
     user.resetAttempts >= RESET_MAX_ATTEMPTS
   ) {
     throw invalid();
