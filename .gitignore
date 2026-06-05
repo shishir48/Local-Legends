@@ -11,3 +11,6 @@ android/
 coverage/
 google-service-account.json
 .superpowers/
+
+# Firebase (FCM) — never commit
+google-services.json

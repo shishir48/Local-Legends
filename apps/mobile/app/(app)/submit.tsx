@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
 import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSearchField';
 import { CityPickerModal } from '../../components/CityPickerModal';
+import { registerForPush } from '../../lib/push';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { gemsApi, type Gem } from '../../services/api';
 import { logger } from '../../services/logger';
@@ -108,6 +109,9 @@ export default function SubmitScreen() {
       qc.invalidateQueries({ queryKey: ['gems'] });
       qc.invalidateQueries({ queryKey: ['user-gems'] });
       logger.event('gem_submitted', { gemId: gem.id, name: gem.name });
+      // They now have a gem to get votes on — ask for push permission in
+      // context. Best-effort; prompts only the first time.
+      registerForPush(true);
       router.replace(`/gems/${gem.id}`);
     },
     onError: (err: Error) => {

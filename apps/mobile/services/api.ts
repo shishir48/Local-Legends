@@ -130,6 +130,13 @@ export const categoriesApi = {
   list: () => api.get<{ items: Category[] }>('/api/categories').then((r) => r.data),
 };
 
+export const pushApi = {
+  register: (token: string, platform: 'android') =>
+    api.post<void>('/api/push/register', { token, platform }).then((r) => r.data),
+  remove: (token: string) =>
+    api.delete<void>('/api/push/register', { data: { token } }).then((r) => r.data),
+};
+
 export interface PlaceDetail {
   name: string;
   address: string;

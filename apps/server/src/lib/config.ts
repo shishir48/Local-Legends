@@ -13,6 +13,8 @@ const EnvSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   // Email of the user auto-promoted to admin on startup (see ensureAdminUser).
   ADMIN_EMAIL: z.string().email().optional(),
+  // Path to the Firebase service-account JSON on disk. Unset → push disabled.
+  FCM_SERVICE_ACCOUNT_PATH: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

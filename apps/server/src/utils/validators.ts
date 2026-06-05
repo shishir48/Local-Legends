@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
 import { GEM_CATEGORIES } from '../models/Gem';
+import { PUSH_PLATFORMS } from '../models/PushToken';
 
 export const ObjectIdSchema = z
   .string()
@@ -49,4 +50,13 @@ export const NearbyQuerySchema = z.object({
 export const UpdateProfileSchema = z.object({
   displayName: z.string().min(1).max(50).trim().optional(),
   avatarUrl: z.string().url().optional().nullable(),
+});
+
+export const RegisterPushSchema = z.object({
+  token: z.string().min(1).max(4096),
+  platform: z.enum(PUSH_PLATFORMS),
+});
+
+export const UnregisterPushSchema = z.object({
+  token: z.string().min(1).max(4096),
 });
