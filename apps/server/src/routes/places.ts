@@ -4,8 +4,16 @@ import rateLimit from 'express-rate-limit';
 const router = Router();
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const GOOGLE_AUTOCOMPLETE = 'https://places.googleapis.com/v1/places:autocomplete';
+const GOOGLE_DETAILS_BASE = 'https://places.googleapis.com/v1/places/';
 const UA = 'LocalLegend/1.0 (demo app)';
 const FETCH_TIMEOUT_MS = 5_000;
+
+// Read the key at request time (not from the frozen config object) so it picks
+// up dotenv-populated env and is easy to toggle in tests. Empty → undefined.
+function googleKey(): string | undefined {
+  return process.env.GOOGLE_MAPS_API_KEY?.trim() || undefined;
+}
 
 // Nominatim's usage policy caps callers at ~1 req/s. Throttle hard so this
 // open proxy can't be abused to hammer (and get us banned from) Nominatim.
@@ -21,6 +29,21 @@ const CITY_SUFFIXES = /\s+(city\s+district|municipal\s+corporation|corporation|d
 
 function cleanCityName(s: string): string {
   return s.replace(CITY_SUFFIXES, '').trim();
+}
+
+interface PlaceDetail {
+  name: string;
+  address: string;
+  city: string;
+  lat: number;
+  lng: number;
+  mapsUrl: string;
+}
+
+interface Prediction {
+  place_id: string;
+  structured_formatting: { main_text: string; secondary_text: string };
+  detail?: PlaceDetail;
 }
 
 // Cache of city name → Nominatim viewbox string (or null when unresolvable).
@@ -64,6 +87,17 @@ async function getCityViewbox(city: string): Promise<string | null> {
   return viewbox;
 }
 
+/** "west,north,east,south" → a Google Places rectangle (or null). */
+function viewboxToRectangle(viewbox: string | null) {
+  if (!viewbox) return null;
+  const [west, north, east, south] = viewbox.split(',').map(Number);
+  if ([west, north, east, south].some((n) => Number.isNaN(n))) return null;
+  return {
+    low: { latitude: south, longitude: west },
+    high: { latitude: north, longitude: east },
+  };
+}
+
 function extractCity(address: Record<string, string>): string {
   // `city` is most accurate but can contain e.g. "Chennai Corporation"
   if (address.city) return cleanCityName(address.city);
@@ -75,68 +109,197 @@ function extractCity(address: Record<string, string>): string {
   return '';
 }
 
-router.get('/autocomplete', placesLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { input, city } = req.query;
-    if (!input || typeof input !== 'string' || !input.trim()) {
-      return res.status(400).json({ error: 'input required' });
+/** City name from Google Place Details addressComponents. */
+function cityFromComponents(
+  components: Array<{ types?: string[]; longText?: string }> = []
+): string {
+  const byType = (t: string) => components.find((c) => c.types?.includes(t))?.longText ?? '';
+  return cleanCityName(
+    byType('locality') ||
+      byType('administrative_area_level_3') ||
+      byType('administrative_area_level_2') ||
+      ''
+  );
+}
+
+async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const resp = await fetch(url, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timer)
+  );
+  return resp.json();
+}
+
+/** Nominatim free-text business search (fallback when no Google key). */
+async function nominatimAutocomplete(input: string, city?: string): Promise<Prediction[]> {
+  const url = new URL(NOMINATIM);
+  url.searchParams.set('q', input.trim());
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('limit', '8');
+  url.searchParams.set('dedupe', '1');
+
+  if (city && city.trim()) {
+    const viewbox = await getCityViewbox(city);
+    if (viewbox) {
+      url.searchParams.set('viewbox', viewbox);
+      url.searchParams.set('bounded', '1');
     }
+  }
 
-    const url = new URL(NOMINATIM);
-    url.searchParams.set('q', input.trim());
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('addressdetails', '1');
-    url.searchParams.set('limit', '8');
-    url.searchParams.set('dedupe', '1');
+  const raw = (await fetchJson(url.toString(), {
+    headers: { 'User-Agent': UA, 'Accept-Language': 'en' },
+  })) as Array<{
+    osm_id: number;
+    display_name: string;
+    name?: string;
+    address: Record<string, string>;
+    lat: string;
+    lon: string;
+  }>;
 
-    // Restrict results to the selected city's bounding box when provided.
-    if (typeof city === 'string' && city.trim()) {
-      const viewbox = await getCityViewbox(city);
-      if (viewbox) {
-        url.searchParams.set('viewbox', viewbox);
-        url.searchParams.set('bounded', '1');
-      }
-    }
+  return raw.map((r) => {
+    const namePart =
+      r.address.amenity ?? r.address.shop ?? r.address.tourism ?? r.name ?? r.display_name.split(',')[0] ?? '';
+    const cityName = extractCity(r.address);
+    const shortAddr = [r.address.road, r.address.suburb, cityName].filter(Boolean).join(', ');
+    return {
+      place_id: String(r.osm_id),
+      structured_formatting: { main_text: namePart, secondary_text: shortAddr },
+      detail: {
+        name: namePart,
+        address: r.display_name,
+        city: cityName,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.display_name)}`,
+      },
+    };
+  });
+}
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    const resp = await fetch(url.toString(), {
-      headers: { 'User-Agent': UA, 'Accept-Language': 'en' },
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timer));
+/** Google Places (New) autocomplete — ranked prefix typeahead, city-restricted. */
+async function googleAutocomplete(
+  input: string,
+  city: string | undefined,
+  session: string | undefined,
+  key: string
+): Promise<Prediction[]> {
+  const rectangle = city && city.trim() ? viewboxToRectangle(await getCityViewbox(city)) : null;
 
-    const raw = await resp.json() as Array<{
-      osm_id: number;
-      display_name: string;
-      name?: string;
-      address: Record<string, string>;
-      lat: string;
-      lon: string;
+  const body: Record<string, unknown> = {
+    input: input.trim(),
+    includedRegionCodes: ['in'],
+  };
+  if (session) body.sessionToken = session;
+  if (rectangle) body.locationRestriction = { rectangle };
+
+  const data = (await fetchJson(GOOGLE_AUTOCOMPLETE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key },
+    body: JSON.stringify(body),
+  })) as {
+    suggestions?: Array<{
+      placePrediction?: {
+        placeId: string;
+        structuredFormat?: { mainText?: { text: string }; secondaryText?: { text: string } };
+      };
     }>;
+  };
 
-    const predictions = raw.map((r) => {
-      const namePart = r.address.amenity ?? r.address.shop ?? r.address.tourism ?? r.name ?? r.display_name.split(',')[0] ?? '';
-      const city = extractCity(r.address);
-      const shortAddr = [r.address.road, r.address.suburb, city].filter(Boolean).join(', ');
-
+  return (data.suggestions ?? [])
+    .filter((s) => s.placePrediction)
+    .map((s) => {
+      const p = s.placePrediction!;
       return {
-        place_id: String(r.osm_id),
+        place_id: p.placeId,
         structured_formatting: {
-          main_text: namePart,
-          secondary_text: shortAddr,
-        },
-        detail: {
-          name: namePart,
-          address: r.display_name,
-          city,
-          lat: parseFloat(r.lat),
-          lng: parseFloat(r.lon),
-          mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.display_name)}`,
+          main_text: p.structuredFormat?.mainText?.text ?? '',
+          secondary_text: p.structuredFormat?.secondaryText?.text ?? '',
         },
       };
     });
+}
 
+/** Google Place Details (New) → the detail shape the client consumes. */
+async function googlePlaceDetails(
+  placeId: string,
+  session: string | undefined,
+  key: string
+): Promise<PlaceDetail> {
+  const url =
+    GOOGLE_DETAILS_BASE + encodeURIComponent(placeId) + (session ? `?sessionToken=${session}` : '');
+  const d = (await fetchJson(url, {
+    headers: {
+      'X-Goog-Api-Key': key,
+      'X-Goog-FieldMask': 'displayName,formattedAddress,location,googleMapsUri,addressComponents',
+    },
+  })) as {
+    displayName?: { text: string };
+    formattedAddress?: string;
+    location?: { latitude: number; longitude: number };
+    googleMapsUri?: string;
+    addressComponents?: Array<{ types?: string[]; longText?: string }>;
+  };
+
+  return {
+    name: d.displayName?.text ?? '',
+    address: d.formattedAddress ?? '',
+    city: cityFromComponents(d.addressComponents),
+    lat: d.location?.latitude ?? 0,
+    lng: d.location?.longitude ?? 0,
+    mapsUrl: d.googleMapsUri ?? '',
+  };
+}
+
+router.get('/autocomplete', placesLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { input, city, session } = req.query;
+    if (!input || typeof input !== 'string' || !input.trim()) {
+      return res.status(400).json({ error: 'input required' });
+    }
+    const cityStr = typeof city === 'string' ? city : undefined;
+    const sessionStr = typeof session === 'string' ? session : undefined;
+
+    const key = googleKey();
+    if (key) {
+      let predictions: Prediction[] = [];
+      try {
+        predictions = await googleAutocomplete(input, cityStr, sessionStr, key);
+      } catch {
+        predictions = []; // never 500 the typeahead field
+      }
+      return res.json({ predictions, status: 'OK' });
+    }
+
+    const predictions = await nominatimAutocomplete(input, cityStr);
     res.json({ predictions, status: 'OK' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/details', placesLimiter, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { place_id, session } = req.query;
+    if (!place_id || typeof place_id !== 'string') {
+      return res.status(400).json({ error: 'place_id required' });
+    }
+    const key = googleKey();
+    if (!key) {
+      // No Google key → autocomplete used the Nominatim fallback, which returns
+      // `detail` inline, so the client never calls this endpoint in that mode.
+      return res.status(400).json({ error: 'details unavailable' });
+    }
+
+    const sessionStr = typeof session === 'string' ? session : undefined;
+    try {
+      const detail = await googlePlaceDetails(place_id, sessionStr, key);
+      res.json(detail);
+    } catch {
+      res.status(502).json({ error: 'Could not load place details' });
+    }
   } catch (err) {
     next(err);
   }

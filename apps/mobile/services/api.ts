@@ -120,17 +120,34 @@ export const categoriesApi = {
   list: () => api.get<{ items: Category[] }>('/api/categories').then((r) => r.data),
 };
 
+export interface PlaceDetail {
+  name: string;
+  address: string;
+  city: string;
+  lat: number;
+  lng: number;
+  mapsUrl: string;
+}
+
 export interface PlacePrediction {
   place_id: string;
   structured_formatting: { main_text: string; secondary_text: string };
-  detail: { name: string; address: string; city: string; lat: number; lng: number; mapsUrl: string };
+  // Present only in the Nominatim fallback (no Google key); in Google mode the
+  // detail is fetched via placesApi.details on selection.
+  detail?: PlaceDetail;
 }
 
 export const placesApi = {
-  autocomplete: (input: string, city?: string) =>
+  autocomplete: (input: string, city?: string, session?: string) =>
     api
       .get<{ predictions: PlacePrediction[]; status: string }>('/api/places/autocomplete', {
-        params: city ? { input, city } : { input },
+        params: { input, ...(city ? { city } : {}), ...(session ? { session } : {}) },
+      })
+      .then((r) => r.data),
+  details: (placeId: string, session?: string) =>
+    api
+      .get<PlaceDetail>('/api/places/details', {
+        params: { place_id: placeId, ...(session ? { session } : {}) },
       })
       .then((r) => r.data),
 };
