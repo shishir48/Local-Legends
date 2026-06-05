@@ -106,6 +106,7 @@ export default function SubmitScreen() {
     },
     onSuccess: (gem: Gem) => {
       qc.invalidateQueries({ queryKey: ['gems'] });
+      qc.invalidateQueries({ queryKey: ['user-gems'] });
       logger.event('gem_submitted', { gemId: gem.id, name: gem.name });
       router.replace(`/gems/${gem.id}`);
     },
