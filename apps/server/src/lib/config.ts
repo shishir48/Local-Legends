@@ -11,6 +11,8 @@ const EnvSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('Local Legend <noreply@shishir.cloud>'),
   CORS_ORIGIN: z.string().default('*'),
+  // Email of the user auto-promoted to admin on startup (see ensureAdminUser).
+  ADMIN_EMAIL: z.string().email().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

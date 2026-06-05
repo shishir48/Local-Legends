@@ -1,7 +1,11 @@
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGem } from '../../../hooks/useGems';
+import { gemsApi } from '../../../services/api';
+import { useAuthStore } from '../../../stores/authStore';
 import { VoteButton } from '../../../components/VoteButton';
 import { AmbientGlow } from '../../../components/AmbientGlow';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
@@ -11,6 +15,9 @@ export default function GemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const gem = useGem(id);
+  const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+  const [deleting, setDeleting] = useState(false);
 
   if (gem.isLoading) {
     return (
@@ -32,6 +39,31 @@ export default function GemDetailScreen() {
   const g = gem.data;
   const submitter = typeof g.submittedBy === 'object' ? g.submittedBy : null;
   const [lng, lat] = g.location.coordinates;
+
+  const submitterId = submitter?._id ?? (typeof g.submittedBy === 'string' ? g.submittedBy : null);
+  const canDelete = !!user && (user.isAdmin || submitterId === user.id);
+
+  const confirmDelete = () => {
+    Alert.alert('Delete gem', `Remove "${g.name}"? This can't be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            await gemsApi.remove(g.id);
+            queryClient.invalidateQueries({ queryKey: ['gems'] });
+            queryClient.invalidateQueries({ queryKey: ['user-gems'] });
+            router.back();
+          } catch {
+            setDeleting(false);
+            Alert.alert('Delete failed', 'Could not delete that gem. Try again.');
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -119,6 +151,37 @@ export default function GemDetailScreen() {
         <View style={{ marginTop: spacing.xl, alignItems: 'center' }}>
           <VoteButton gemId={g.id} voteCount={g.voteCount} hasVoted={!!g.hasVoted} />
         </View>
+
+        {canDelete ? (
+          <Pressable
+            onPress={confirmDelete}
+            disabled={deleting}
+            accessibilityRole="button"
+            accessibilityLabel="Delete gem"
+            style={({ pressed }) => ({
+              marginTop: spacing.xl,
+              padding: spacing.md,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderColor: colors.danger,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              opacity: pressed || deleting ? 0.6 : 1,
+            })}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
+                <Text style={{ color: colors.danger, fontWeight: '600' }}>
+                  {user?.isAdmin && submitterId !== user.id ? 'Delete gem (admin)' : 'Delete gem'}
+                </Text>
+              </>
+            )}
+          </Pressable>
+        ) : null}
       </View>
       </ScrollView>
     </View>

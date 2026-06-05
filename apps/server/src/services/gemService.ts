@@ -155,10 +155,11 @@ export async function updateGem(
   return gem.toJSON();
 }
 
-export async function deleteGem(id: string, userId: string) {
+export async function deleteGem(id: string, userId: string, isAdmin = false) {
   const gem = await Gem.findOne({ _id: id, isDeleted: false });
   if (!gem) throw ApiError.notFound('Gem not found');
-  if (gem.submittedBy.toString() !== userId) {
+  // Admins can delete any gem; everyone else only their own.
+  if (!isAdmin && gem.submittedBy.toString() !== userId) {
     throw ApiError.forbidden('You can only delete your own gems');
   }
   gem.isDeleted = true;

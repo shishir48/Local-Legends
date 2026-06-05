@@ -1,9 +1,11 @@
 import { createApp } from './app';
 import { connectDB } from './lib/db';
 import { config } from './lib/config';
+import { ensureAdminUser } from './lib/ensureAdmin';
 
 async function main() {
   await connectDB();
+  await ensureAdminUser();
   const app = createApp();
 
   const server = app.listen(config.PORT, () => {
