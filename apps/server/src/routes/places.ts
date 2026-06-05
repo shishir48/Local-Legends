@@ -27,6 +27,61 @@ const placesLimiter = rateLimit({
 
 const CITY_SUFFIXES = /\s+(city\s+district|municipal\s+corporation|corporation|district|urban)\s*$/i;
 
+// A gem is a specific place (business / POI), never a whole city, region or
+// country. These Google place types describe an area rather than a venue, so
+// any prediction carrying one of them is dropped from the suggestions.
+const GOOGLE_REGION_TYPES = new Set([
+  'locality',
+  'sublocality',
+  'sublocality_level_1',
+  'sublocality_level_2',
+  'neighborhood',
+  'administrative_area_level_1',
+  'administrative_area_level_2',
+  'administrative_area_level_3',
+  'administrative_area_level_4',
+  'administrative_area_level_5',
+  'colloquial_area',
+  'country',
+  'political',
+  'postal_code',
+  'postal_code_prefix',
+  'plus_code',
+]);
+
+function isGoogleRegion(types: string[] = []): boolean {
+  return types.some((t) => GOOGLE_REGION_TYPES.has(t));
+}
+
+// Nominatim returns class/type for each hit. `boundary` rows are admin areas,
+// and `place`-class rows of these types are cities/regions — not venues. Other
+// place types (e.g. house) and POI classes (amenity/shop/tourism/…) stay.
+const NOMINATIM_REGION_PLACE_TYPES = new Set([
+  'city',
+  'town',
+  'village',
+  'hamlet',
+  'suburb',
+  'neighbourhood',
+  'quarter',
+  'locality',
+  'municipality',
+  'county',
+  'district',
+  'region',
+  'province',
+  'state',
+  'state_district',
+  'country',
+  'continent',
+]);
+
+function isNominatimRegion(klass?: string, type?: string): boolean {
+  if (klass === 'boundary') return true;
+  if (klass === 'place' && type && NOMINATIM_REGION_PLACE_TYPES.has(type)) return true;
+  return false;
+}
+
 function cleanCityName(s: string): string {
   return s.replace(CITY_SUFFIXES, '').trim();
 }
@@ -168,12 +223,16 @@ async function nominatimAutocomplete(input: string, city?: string): Promise<Pred
     osm_id: number;
     display_name: string;
     name?: string;
+    class?: string;
+    type?: string;
     address: Record<string, string>;
     lat: string;
     lon: string;
   }>;
 
-  return raw.map((r) => {
+  return raw
+    .filter((r) => !isNominatimRegion(r.class, r.type))
+    .map((r) => {
     const namePart =
       r.address.amenity ?? r.address.shop ?? r.address.tourism ?? r.name ?? r.display_name.split(',')[0] ?? '';
     const cityName = extractCity(r.address);
@@ -217,13 +276,14 @@ async function googleAutocomplete(
     suggestions?: Array<{
       placePrediction?: {
         placeId: string;
+        types?: string[];
         structuredFormat?: { mainText?: { text: string }; secondaryText?: { text: string } };
       };
     }>;
   };
 
   return (data.suggestions ?? [])
-    .filter((s) => s.placePrediction)
+    .filter((s) => s.placePrediction && !isGoogleRegion(s.placePrediction.types))
     .map((s) => {
       const p = s.placePrediction!;
       return {
