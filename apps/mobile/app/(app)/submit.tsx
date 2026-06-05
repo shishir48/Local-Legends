@@ -177,7 +177,9 @@ export default function SubmitScreen() {
             error={errors.name?.message}
           />
 
-          {showCityPicker && <CityPickerModal onSelect={selectCity} />}
+          {showCityPicker && (
+            <CityPickerModal onSelect={selectCity} onClose={() => setShowCityPicker(false)} />
+          )}
 
           {place && (
             <View

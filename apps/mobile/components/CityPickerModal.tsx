@@ -5,7 +5,13 @@ import { searchCities, INDIAN_CITIES } from '../utils/indianCities';
 
 const POPULAR_CITIES = ['Bengaluru', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune', 'Kolkata'];
 
-export function CityPickerModal({ onSelect }: { onSelect: (city: string) => void }) {
+export function CityPickerModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (city: string) => void;
+  onClose?: () => void;
+}) {
   const [input, setInput] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const suggestions = searchCities(input);
@@ -22,8 +28,10 @@ export function CityPickerModal({ onSelect }: { onSelect: (city: string) => void
   };
 
   return (
-    <Modal transparent animationType="fade">
-      <View
+    <Modal transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        onPress={onClose}
+        disabled={!onClose}
         style={{
           flex: 1,
           backgroundColor: 'rgba(0,0,0,0.5)',
@@ -31,7 +39,21 @@ export function CityPickerModal({ onSelect }: { onSelect: (city: string) => void
           padding: spacing.xl,
         }}
       >
-        <View style={{ backgroundColor: colors.bg, borderRadius: radius.lg, padding: spacing.xl }}>
+        <Pressable
+          onPress={() => {}}
+          style={{ backgroundColor: colors.bg, borderRadius: radius.lg, padding: spacing.xl }}
+        >
+          {onClose ? (
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={12}
+              style={{ position: 'absolute', top: spacing.md, right: spacing.md, zIndex: 1 }}
+            >
+              <Text style={{ color: colors.textMuted, fontSize: 22 }}>✕</Text>
+            </Pressable>
+          ) : null}
           <Text style={text.h1}>Pick your city</Text>
           <Text style={[text.muted, { marginBottom: spacing.lg }]}>
             We'll show top-voted local gems near you.
@@ -141,8 +163,8 @@ export function CityPickerModal({ onSelect }: { onSelect: (city: string) => void
               {inputIsValid ? `Explore ${selected}` : 'Select a city to continue'}
             </Text>
           </Pressable>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
