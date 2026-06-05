@@ -1,5 +1,5 @@
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useGem } from '../../../hooks/useGems';
 import { VoteButton } from '../../../components/VoteButton';
@@ -9,6 +9,7 @@ import { colors, glass, radius, spacing, text } from '../../../utils/theme';
 
 export default function GemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const gem = useGem(id);
 
   if (gem.isLoading) {
@@ -82,9 +83,37 @@ export default function GemDetailScreen() {
         </Pressable>
 
         {submitter ? (
-          <Text style={[text.muted, { marginTop: spacing.lg }]}>
-            Submitted by {submitter.displayName}
-          </Text>
+          <Pressable
+            onPress={() => router.push(`/users/${submitter._id}`)}
+            style={{ marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center' }}
+            accessibilityRole="button"
+            accessibilityLabel={`View ${submitter.displayName}'s profile`}
+          >
+            {submitter.avatarUrl ? (
+              <Image
+                source={{ uri: submitter.avatarUrl }}
+                style={{ width: 24, height: 24, borderRadius: 12, marginRight: spacing.sm }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  marginRight: spacing.sm,
+                  backgroundColor: colors.surface,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="person" size={14} color={colors.textMuted} />
+              </View>
+            )}
+            <Text style={text.muted}>
+              Submitted by <Text style={{ color: colors.primary, fontWeight: '600' }}>{submitter.displayName}</Text>
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginLeft: spacing.xs }} />
+          </Pressable>
         ) : null}
 
         <View style={{ marginTop: spacing.xl, alignItems: 'center' }}>
