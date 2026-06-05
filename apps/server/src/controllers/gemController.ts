@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as gemService from '../services/gemService';
-import { uploadBufferToCloudinary, uploadUrlToCloudinary } from '../lib/cloudinary';
+import { saveBuffer, saveFromUrl } from '../lib/imageStore';
 import { googlePhotoUri } from '../lib/googlePhotos';
 import {
   CreateGemSchema,
@@ -52,16 +52,14 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     let photoUrl: string | null = null;
     let photoPublicId: string | null = null;
     if (req.file) {
-      const asset = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
-      if (asset) {
-        photoUrl = asset.url;
-        photoPublicId = asset.publicId;
-      }
+      const asset = saveBuffer(req.file.buffer);
+      photoUrl = asset.url;
+      photoPublicId = asset.publicId;
     } else if (input.googlePhotoName) {
       // No uploaded photo — pull the place's Google photo and store it.
       const uri = await googlePhotoUri(input.googlePhotoName);
       if (uri) {
-        const asset = await uploadUrlToCloudinary(uri);
+        const asset = await saveFromUrl(uri);
         if (asset) {
           photoUrl = asset.url;
           photoPublicId = asset.publicId;
@@ -88,10 +86,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
     let photoOverride: { photoUrl: string | null; photoPublicId: string | null } | null = null;
     if (req.file) {
-      const asset = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname);
-      if (asset) {
-        photoOverride = { photoUrl: asset.url, photoPublicId: asset.publicId };
-      }
+      const asset = saveBuffer(req.file.buffer);
+      photoOverride = { photoUrl: asset.url, photoPublicId: asset.publicId };
     }
 
     const result = await gemService.updateGem(id, req.user!.id, {

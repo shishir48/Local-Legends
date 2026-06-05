@@ -53,7 +53,7 @@ export function GemCard({ gem, highlight = false }: Props) {
             highlight && glow.amber,
           ]}
         >
-          {/* Thumbnail — larger, photo-forward; tinted category tile as fallback */}
+          {/* Thumbnail — large, photo-forward; tinted category tile as fallback */}
           {gem.photoUrl ? (
             <Image source={{ uri: gem.photoUrl }} style={thumb} />
           ) : (
@@ -67,56 +67,49 @@ export function GemCard({ gem, highlight = false }: Props) {
                 },
               ]}
             >
-              <Text style={{ fontSize: rf(34) }}>{categoryEmoji(gem.category)}</Text>
+              <Text style={{ fontSize: rf(36) }}>{categoryEmoji(gem.category)}</Text>
             </View>
           )}
 
-          <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
             <Text style={[text.body, { fontWeight: '800', fontSize: rf(16) }]} numberOfLines={1}>
               {gem.name}
             </Text>
 
             {/* Category chip */}
-            <View style={{ flexDirection: 'row', marginTop: 6 }}>
+            <View style={{ flexDirection: 'row' }}>
               <View
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: glass.fillStrong,
+                  backgroundColor: highlight ? glass.amberFill : glass.fillStrong,
                   borderWidth: 1,
-                  borderColor: glass.border,
+                  borderColor: highlight ? glass.amberBorder : glass.border,
                   borderRadius: radius.pill,
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 3,
                 }}
               >
                 <Text style={{ fontSize: rf(12) }}>{categoryEmoji(gem.category)}</Text>
-                <Text style={{ color: colors.textMuted, fontWeight: '600', fontSize: rf(12), marginLeft: 4 }}>
+                <Text style={{ color: colors.text, fontWeight: '600', fontSize: rf(12), marginLeft: 4 }}>
                   {cap(gem.category)}
                 </Text>
               </View>
             </View>
 
-            {/* Location */}
-            {area ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
-                <Ionicons name="location-outline" size={rf(12)} color={colors.textMuted} />
-                <Text style={[text.muted, { marginLeft: 3 }]} numberOfLines={1}>
-                  {area}
-                </Text>
-              </View>
-            ) : null}
-
-            {addedBy ? (
-              <Text style={[text.muted, { marginTop: 4, fontSize: rf(11) }]} numberOfLines={1}>
-                Added by {addedBy}
+            {/* Meta: location · added by — one tidy muted line */}
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="location-outline" size={rf(12)} color={colors.textMuted} />
+              <Text style={[text.muted, { marginLeft: 3, fontSize: rf(12), flexShrink: 1 }]} numberOfLines={1}>
+                {area || 'Unknown'}
+                {addedBy ? ` · by ${addedBy}` : ''}
               </Text>
-            ) : null}
+            </View>
 
             {highlight && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ fontSize: 11 }}>🔥</Text>
-                <Text style={{ marginLeft: 4, color: colors.primarySoft, fontWeight: '700', fontSize: 11 }}>
+                <Text style={{ marginLeft: 4, color: colors.primarySoft, fontWeight: '700', fontSize: rf(11) }}>
                   Top gem here
                 </Text>
               </View>
@@ -126,18 +119,19 @@ export function GemCard({ gem, highlight = false }: Props) {
           {/* Vote pill */}
           <View
             style={{
-              minWidth: rf(52),
+              minWidth: rf(54),
               alignItems: 'center',
+              alignSelf: 'stretch',
+              justifyContent: 'center',
               backgroundColor: highlight ? glass.amberFill : glass.fillStrong,
               borderWidth: 1,
               borderColor: highlight ? glass.amberBorder : glass.border,
               borderRadius: radius.md,
-              paddingVertical: spacing.sm,
               paddingHorizontal: spacing.xs,
             }}
           >
-            <Ionicons name="arrow-up" size={rf(14)} color={colors.primary} />
-            <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: rf(15), marginTop: 1 }}>
+            <Ionicons name="arrow-up" size={rf(15)} color={colors.primary} />
+            <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: rf(16), marginTop: 1 }}>
               {formatVotes(gem.voteCount)}
             </Text>
           </View>
@@ -148,8 +142,8 @@ export function GemCard({ gem, highlight = false }: Props) {
 }
 
 const thumb = {
-  width: rf(84),
-  height: rf(84),
+  width: rf(92),
+  height: rf(92),
   borderRadius: radius.md,
   backgroundColor: colors.surfaceAlt,
   borderWidth: 1,
