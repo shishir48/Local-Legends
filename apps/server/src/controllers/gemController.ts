@@ -103,7 +103,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const id = ObjectIdSchema.parse(req.params.id);
-    await gemService.deleteGem(id, req.user!.id);
+    await gemService.deleteGem(id, req.user!.id, req.user!.isAdmin);
     res.status(204).send();
   } catch (err) {
     next(err);

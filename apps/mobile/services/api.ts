@@ -47,6 +47,7 @@ export interface AuthUser {
   email: string;
   displayName: string;
   avatarUrl: string | null;
+  isAdmin?: boolean;
   createdAt?: string;
 }
 
@@ -107,6 +108,7 @@ export const gemsApi = {
       .then((r) => r.data),
   vote: (id: string) =>
     api.post<{ voted: boolean; voteCount: number }>(`/api/gems/${id}/vote`).then((r) => r.data),
+  remove: (id: string) => api.delete<void>(`/api/gems/${id}`).then((r) => r.data),
 };
 
 export interface PublicUser {

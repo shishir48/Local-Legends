@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app, auth, makeUser, gemPayload } from './helpers';
+import { User } from '../src/models/User';
+import { ensureAdminUser } from '../src/lib/ensureAdmin';
 
 async function createGem(token: string, overrides: Record<string, unknown> = {}) {
   const res = await request(app)
@@ -89,6 +91,34 @@ describe('gems auth + ownership gating', () => {
     const stranger = await makeUser();
     const gem = await createGem(owner.token);
     await request(app).delete(`/api/gems/${gem.id}`).set(auth(stranger.token)).expect(403);
+  });
+
+  it('lets an admin delete someone else’s gem (204)', async () => {
+    const owner = await makeUser();
+    const admin = await makeUser();
+    await User.updateOne({ _id: admin.id }, { $set: { isAdmin: true } });
+    const gem = await createGem(owner.token);
+    await request(app).delete(`/api/gems/${gem.id}`).set(auth(admin.token)).expect(204);
+    // gem is gone from the public listing
+    await request(app).get(`/api/gems/${gem.id}`).expect(404);
+  });
+});
+
+describe('ensureAdminUser', () => {
+  it('promotes the ADMIN_EMAIL user to admin, idempotently', async () => {
+    const u = await makeUser();
+    process.env.ADMIN_EMAIL = u.email;
+    try {
+      await ensureAdminUser();
+      let doc = await User.findById(u.id).select('isAdmin').lean();
+      expect(doc?.isAdmin).toBe(true);
+      // second run is a harmless no-op
+      await ensureAdminUser();
+      doc = await User.findById(u.id).select('isAdmin').lean();
+      expect(doc?.isAdmin).toBe(true);
+    } finally {
+      delete process.env.ADMIN_EMAIL;
+    }
   });
 });
 
