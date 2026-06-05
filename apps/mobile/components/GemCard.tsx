@@ -25,8 +25,14 @@ function cap(s: string): string {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
+/** Submitter display name, when the gem's submittedBy is populated. */
+function submitterName(submittedBy: Gem['submittedBy']): string {
+  return typeof submittedBy === 'object' && submittedBy ? submittedBy.displayName : '';
+}
+
 export function GemCard({ gem, highlight = false }: Props) {
   const area = gem.city?.trim() || '';
+  const addedBy = submitterName(gem.submittedBy);
 
   return (
     <Link href={`/gems/${gem.id}`} asChild>
@@ -99,6 +105,12 @@ export function GemCard({ gem, highlight = false }: Props) {
                   {area}
                 </Text>
               </View>
+            ) : null}
+
+            {addedBy ? (
+              <Text style={[text.muted, { marginTop: 4, fontSize: rf(11) }]} numberOfLines={1}>
+                Added by {addedBy}
+              </Text>
             ) : null}
 
             {highlight && (
