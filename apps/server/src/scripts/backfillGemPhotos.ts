@@ -27,7 +27,7 @@ async function firstPhotoName(query: string, key: string): Promise<string | unde
       'X-Goog-Api-Key': key,
       'X-Goog-FieldMask': 'places.id,places.photos',
     },
-    body: JSON.stringify({ textQuery: query, includedRegionCodes: ['in'] }),
+    body: JSON.stringify({ textQuery: query, regionCode: 'IN' }),
   });
   if (!resp.ok) return undefined;
   const data = (await resp.json()) as { places?: Array<{ photos?: Array<{ name: string }> }> };
