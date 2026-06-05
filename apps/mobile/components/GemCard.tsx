@@ -55,15 +55,11 @@ export function GemCard({ gem, highlight = false }: Props) {
         >
           {/* Thumbnail — large, photo-forward; tinted category tile as fallback */}
           {gem.photoUrl ? (
-            <Image
-              source={{ uri: gem.photoUrl }}
-              style={[thumb, highlight && { borderColor: colors.primary }]}
-            />
+            <Image source={{ uri: gem.photoUrl }} style={thumb} />
           ) : (
             <View
               style={[
                 thumb,
-                highlight && { borderColor: colors.primary },
                 {
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -139,9 +135,9 @@ export function GemCard({ gem, highlight = false }: Props) {
               alignItems: 'center',
               alignSelf: 'stretch',
               justifyContent: 'center',
-              backgroundColor: highlight ? glass.amberFill : glass.fillStrong,
+              backgroundColor: glass.fillStrong,
               borderWidth: 1,
-              borderColor: highlight ? glass.amberBorder : glass.border,
+              borderColor: glass.border,
               borderRadius: radius.md,
               paddingHorizontal: spacing.xs,
             }}
