@@ -11,6 +11,7 @@ import gemRoutes from './routes/gems';
 import userRoutes from './routes/users';
 import categoryRoutes from './routes/categories';
 import placesRoutes from './routes/places';
+import photoRoutes from './routes/photo';
 import logsRoutes from './routes/logs';
 
 export function createApp() {
@@ -44,6 +45,7 @@ export function createApp() {
   app.use('/api/users', userRoutes);
   app.use('/api/categories', categoryRoutes);
   app.use('/api/places', placesRoutes);
+  app.use('/api/photo', photoRoutes);
   app.use('/api/logs', logsRoutes);
 
   app.use(notFoundHandler);

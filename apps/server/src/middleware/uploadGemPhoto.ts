@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-import { uploadGemPhoto as multerHandler } from '../lib/cloudinary';
+import { uploadGemPhoto as multerHandler } from '../lib/imageStore';
 import { ApiError } from '../utils/ApiError';
 
 /**

@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { Gem } from '../models/Gem';
 import { ApiError } from '../utils/ApiError';
-import { deleteCloudinaryAsset } from '../lib/cloudinary';
+import { deleteImage } from '../lib/imageStore';
 
 function withId<T extends { _id: unknown }>(doc: T) {
   return { ...doc, id: String(doc._id) };
@@ -145,7 +145,7 @@ export async function updateGem(
 
   if (patch.photoUrl !== undefined) {
     if (gem.photoPublicId) {
-      await deleteCloudinaryAsset(gem.photoPublicId);
+      deleteImage(gem.photoPublicId);
     }
     gem.photoUrl = patch.photoUrl;
     gem.photoPublicId = patch.photoPublicId ?? null;
@@ -163,7 +163,7 @@ export async function deleteGem(id: string, userId: string) {
   }
   gem.isDeleted = true;
   await gem.save();
-  if (gem.photoPublicId) await deleteCloudinaryAsset(gem.photoPublicId);
+  if (gem.photoPublicId) deleteImage(gem.photoPublicId);
   return { ok: true };
 }
 

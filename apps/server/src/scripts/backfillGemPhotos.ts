@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 import { config } from '../lib/config';
 import { Gem } from '../models/Gem';
 import { googlePhotoUri } from '../lib/googlePhotos';
-import { uploadUrlToCloudinary } from '../lib/cloudinary';
+import { saveFromUrl } from '../lib/imageStore';
 
 const SEARCH_TEXT = 'https://places.googleapis.com/v1/places:searchText';
 
@@ -61,9 +61,9 @@ async function main() {
         console.log(`  ✗ could not resolve photo uri for "${query}"`);
         continue;
       }
-      const asset = await uploadUrlToCloudinary(uri);
+      const asset = await saveFromUrl(uri);
       if (!asset) {
-        console.log(`  ✗ cloudinary upload failed for "${query}"`);
+        console.log(`  ✗ image save failed for "${query}"`);
         continue;
       }
       gem.photoUrl = asset.url;
