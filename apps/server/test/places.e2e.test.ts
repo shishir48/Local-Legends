@@ -136,6 +136,28 @@ describe('GET /api/places/autocomplete — Google path (key set)', () => {
     expect(body.locationRestriction).toBeUndefined();
     expect(body.includedRegionCodes).toEqual(['in']);
   });
+
+  it('falls back to Nominatim when the Google API errors (e.g. not enabled)', async () => {
+    fetchMock.mockImplementation(async (input: string | URL) => {
+      const url = urlOf(input);
+      if (url.includes('places:autocomplete')) {
+        return { ok: false, status: 403, json: async () => ({ error: {} }) } as unknown as Response;
+      }
+      if (url.includes('nominatim')) {
+        const limit = new URL(url).searchParams.get('limit');
+        return jsonResponse(limit === '1' ? LUCKNOW_GEOCODE : NOMINATIM_BUSINESS);
+      }
+      return jsonResponse([]);
+    });
+
+    const res = await request(app)
+      .get('/api/places/autocomplete')
+      .query({ input: 'sassy', city: 'Lucknow' })
+      .expect(200);
+    expect(res.body.status).toBe('OK');
+    expect(res.body.predictions[0].structured_formatting.main_text).toBe('Sassy Canteen');
+    expect(res.body.predictions[0].detail).toBeTruthy(); // Nominatim inline detail
+  });
 });
 
 describe('GET /api/places/details', () => {
@@ -167,5 +189,17 @@ describe('GET /api/places/details', () => {
   it('requires place_id', async () => {
     process.env.GOOGLE_MAPS_API_KEY = 'test-key';
     await request(app).get('/api/places/details').expect(400);
+  });
+
+  it('returns 502 when the Google details call errors', async () => {
+    process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+    fetchMock.mockImplementation(async (input: string | URL) => {
+      const url = urlOf(input);
+      if (url.includes('/v1/places/')) {
+        return { ok: false, status: 403, json: async () => ({ error: {} }) } as unknown as Response;
+      }
+      return jsonResponse([]);
+    });
+    await request(app).get('/api/places/details').query({ place_id: 'PLACE_123' }).expect(502);
   });
 });

@@ -131,6 +131,19 @@ async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   return resp.json();
 }
 
+/** Like fetchJson but throws on a non-2xx response (so callers can fall back). */
+async function fetchJsonOk(url: string, init?: RequestInit): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const resp = await fetch(url, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timer)
+  );
+  if (!resp.ok) {
+    throw new Error(`Upstream ${resp.status}`);
+  }
+  return resp.json();
+}
+
 /** Nominatim free-text business search (fallback when no Google key). */
 async function nominatimAutocomplete(input: string, city?: string): Promise<Prediction[]> {
   const url = new URL(NOMINATIM);
@@ -195,7 +208,7 @@ async function googleAutocomplete(
   if (session) body.sessionToken = session;
   if (rectangle) body.locationRestriction = { rectangle };
 
-  const data = (await fetchJson(GOOGLE_AUTOCOMPLETE, {
+  const data = (await fetchJsonOk(GOOGLE_AUTOCOMPLETE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key },
     body: JSON.stringify(body),
@@ -230,7 +243,7 @@ async function googlePlaceDetails(
 ): Promise<PlaceDetail> {
   const url =
     GOOGLE_DETAILS_BASE + encodeURIComponent(placeId) + (session ? `?sessionToken=${session}` : '');
-  const d = (await fetchJson(url, {
+  const d = (await fetchJsonOk(url, {
     headers: {
       'X-Goog-Api-Key': key,
       'X-Goog-FieldMask': 'displayName,formattedAddress,location,googleMapsUri,addressComponents',
@@ -264,13 +277,13 @@ router.get('/autocomplete', placesLimiter, async (req: Request, res: Response, n
 
     const key = googleKey();
     if (key) {
-      let predictions: Prediction[] = [];
       try {
-        predictions = await googleAutocomplete(input, cityStr, sessionStr, key);
+        const predictions = await googleAutocomplete(input, cityStr, sessionStr, key);
+        return res.json({ predictions, status: 'OK' });
       } catch {
-        predictions = []; // never 500 the typeahead field
+        // Google failed (e.g. API not enabled / quota). Fall back to Nominatim
+        // so the field still returns something instead of going silently empty.
       }
-      return res.json({ predictions, status: 'OK' });
     }
 
     const predictions = await nominatimAutocomplete(input, cityStr);
