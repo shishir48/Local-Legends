@@ -109,9 +109,17 @@ export const gemsApi = {
     api.post<{ voted: boolean; voteCount: number }>(`/api/gems/${id}/vote`).then((r) => r.data),
 };
 
+export interface PublicUser {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export const usersApi = {
   gemsBySubmitter: (id: string) =>
-    api.get<{ items: Gem[]; totalUpvotes: number }>(`/api/users/${id}/gems`).then((r) => r.data),
+    api
+      .get<{ user: PublicUser; items: Gem[]; totalUpvotes: number }>(`/api/users/${id}/gems`)
+      .then((r) => r.data),
   updateMe: (patch: { displayName?: string; avatarUrl?: string | null }) =>
     api.patch<AuthUser>('/api/users/me', patch).then((r) => r.data),
 };

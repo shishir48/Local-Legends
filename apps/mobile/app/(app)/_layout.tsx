@@ -70,6 +70,10 @@ export default function AppTabsLayout() {
         name="gems/[id]"
         options={{ href: null, title: 'Gem' }}
       />
+      <Tabs.Screen
+        name="users/[id]"
+        options={{ href: null, title: 'Profile' }}
+      />
     </Tabs>
   );
 }
