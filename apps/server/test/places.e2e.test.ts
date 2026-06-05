@@ -161,6 +161,54 @@ describe('GET /api/places/autocomplete — Google path (key set)', () => {
   });
 });
 
+describe('GET /api/places/autocomplete — region results are filtered out', () => {
+  it('Nominatim: drops boundary/place rows (whole cities), keeps venues', async () => {
+    fetchMock.mockImplementation(async (input: string | URL) => {
+      const url = urlOf(input);
+      if (url.includes('nominatim')) {
+        const limit = new URL(url).searchParams.get('limit');
+        if (limit === '1') return jsonResponse(LUCKNOW_GEOCODE);
+        return jsonResponse([
+          { osm_id: 1, class: 'boundary', type: 'administrative', display_name: 'Lucknow, India', address: { city: 'Lucknow' }, lat: '26.85', lon: '80.95' },
+          { osm_id: 2, class: 'place', type: 'city', display_name: 'Lucknow, India', address: { city: 'Lucknow' }, lat: '26.85', lon: '80.95' },
+          ...NOMINATIM_BUSINESS,
+        ]);
+      }
+      return jsonResponse([]);
+    });
+
+    const res = await request(app)
+      .get('/api/places/autocomplete')
+      .query({ input: 'lucknow', city: 'Lucknow' })
+      .expect(200);
+    expect(res.body.predictions).toHaveLength(1);
+    expect(res.body.predictions[0].structured_formatting.main_text).toBe('Sassy Canteen');
+  });
+
+  it('Google: drops predictions typed as locality/admin area', async () => {
+    process.env.GOOGLE_MAPS_API_KEY = 'test-key';
+    fetchMock.mockImplementation(async (input: string | URL) => {
+      const url = urlOf(input);
+      if (url.includes('places:autocomplete')) {
+        return jsonResponse({
+          suggestions: [
+            { placePrediction: { placeId: 'CITY_1', types: ['locality', 'political'], structuredFormat: { mainText: { text: 'Lucknow' }, secondaryText: { text: 'Uttar Pradesh' } } } },
+            { placePrediction: { placeId: 'PLACE_123', types: ['restaurant', 'establishment'], structuredFormat: { mainText: { text: 'Tunday Kababi' }, secondaryText: { text: 'Aminabad, Lucknow' } } } },
+          ],
+        });
+      }
+      return jsonResponse([]);
+    });
+
+    const res = await request(app)
+      .get('/api/places/autocomplete')
+      .query({ input: 'luc' })
+      .expect(200);
+    expect(res.body.predictions).toHaveLength(1);
+    expect(res.body.predictions[0].place_id).toBe('PLACE_123');
+  });
+});
+
 describe('GET /api/places/details', () => {
   it('with no Google key returns 400', async () => {
     await request(app).get('/api/places/details').query({ place_id: 'X' }).expect(400);
