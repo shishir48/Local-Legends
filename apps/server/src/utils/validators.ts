@@ -15,6 +15,9 @@ export const CreateGemSchema = z.object({
   mapsUrl: z.string().url().optional(),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
+  // Google Places photo resource name ("places/<id>/photos/<ref>"). When the
+  // submitter uploads no photo, the server fetches this and stores it.
+  googlePhotoName: z.string().max(500).optional(),
 });
 
 export const UpdateGemSchema = z.object({
