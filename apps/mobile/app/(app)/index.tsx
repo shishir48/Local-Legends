@@ -97,7 +97,12 @@ export default function FeedScreen() {
   if (!city || showPicker) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
-        <CityPickerModal onSelect={selectCity} />
+        <CityPickerModal
+          onSelect={selectCity}
+          // Closable only when changing an already-picked city; the first-run
+          // picker stays mandatory (nothing to fall back to yet).
+          onClose={city ? () => setShowPicker(false) : undefined}
+        />
       </SafeAreaView>
     );
   }
