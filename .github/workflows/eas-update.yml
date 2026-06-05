@@ -1,0 +1,44 @@
+name: EAS Update (mobile OTA)
+
+# Auto-ships a mobile JS over-the-air update on push to main when mobile code
+# changes. Typecheck gates the publish — a red build never ships.
+# Native changes still need a new build; this only covers JS/asset updates
+# under the pinned runtimeVersion.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/eas-update.yml'
+  workflow_dispatch: # allow manual "Run workflow" from the Actions tab
+
+concurrency:
+  group: eas-update-production
+  cancel-in-progress: false # never interrupt a publish mid-flight
+
+jobs:
+  update:
+    name: Typecheck & publish OTA
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+      - run: npm run typecheck
+
+      - name: Publish update to the production branch
+        run: eas update --branch production --message "${{ github.event.head_commit.message || github.sha }}" --non-interactive
