@@ -46,20 +46,24 @@ export function GemCard({ gem, highlight = false }: Props) {
               padding: spacing.md,
               borderRadius: radius.lg,
               marginBottom: spacing.md,
-              backgroundColor: highlight ? glass.amberFill : glass.fill,
-              borderWidth: 1,
-              borderColor: highlight ? glass.amberBorder : glass.border,
+              backgroundColor: glass.fill,
+              borderWidth: highlight ? 1.5 : 1,
+              borderColor: highlight ? colors.primary : glass.border,
             },
             highlight && glow.amber,
           ]}
         >
           {/* Thumbnail — large, photo-forward; tinted category tile as fallback */}
           {gem.photoUrl ? (
-            <Image source={{ uri: gem.photoUrl }} style={thumb} />
+            <Image
+              source={{ uri: gem.photoUrl }}
+              style={[thumb, highlight && { borderColor: colors.primary }]}
+            />
           ) : (
             <View
               style={[
                 thumb,
+                highlight && { borderColor: colors.primary },
                 {
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -72,6 +76,27 @@ export function GemCard({ gem, highlight = false }: Props) {
           )}
 
           <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+            {/* Top-gem badge */}
+            {highlight && (
+              <View style={{ flexDirection: 'row' }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: colors.primary,
+                    borderRadius: radius.pill,
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: 2,
+                  }}
+                >
+                  <Text style={{ fontSize: rf(11) }}>🔥</Text>
+                  <Text style={{ color: colors.bg, fontWeight: '800', fontSize: rf(11), marginLeft: 4, letterSpacing: 0.3 }}>
+                    TOP GEM
+                  </Text>
+                </View>
+              </View>
+            )}
+
             <Text style={[text.body, { fontWeight: '800', fontSize: rf(16) }]} numberOfLines={1}>
               {gem.name}
             </Text>
@@ -82,9 +107,9 @@ export function GemCard({ gem, highlight = false }: Props) {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: highlight ? glass.amberFill : glass.fillStrong,
+                  backgroundColor: glass.fillStrong,
                   borderWidth: 1,
-                  borderColor: highlight ? glass.amberBorder : glass.border,
+                  borderColor: glass.border,
                   borderRadius: radius.pill,
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 3,
@@ -105,15 +130,6 @@ export function GemCard({ gem, highlight = false }: Props) {
                 {addedBy ? ` · by ${addedBy}` : ''}
               </Text>
             </View>
-
-            {highlight && (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 11 }}>🔥</Text>
-                <Text style={{ marginLeft: 4, color: colors.primarySoft, fontWeight: '700', fontSize: rf(11) }}>
-                  Top gem here
-                </Text>
-              </View>
-            )}
           </View>
 
           {/* Vote pill */}
