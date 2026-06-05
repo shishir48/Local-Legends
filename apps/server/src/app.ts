@@ -13,6 +13,7 @@ import categoryRoutes from './routes/categories';
 import placesRoutes from './routes/places';
 import photoRoutes from './routes/photo';
 import logsRoutes from './routes/logs';
+import pushRoutes from './routes/push';
 
 export function createApp() {
   const app = express();
@@ -47,6 +48,7 @@ export function createApp() {
   app.use('/api/places', placesRoutes);
   app.use('/api/photo', photoRoutes);
   app.use('/api/logs', logsRoutes);
+  app.use('/api/push', pushRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

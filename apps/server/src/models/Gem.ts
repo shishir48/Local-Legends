@@ -38,6 +38,9 @@ const GemSchema = new Schema(
     photoPublicId: { type: String, default: null }, // stored image id, used to delete
     submittedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     voteCount: { type: Number, default: 0, index: true },
+    // Highest vote milestone the submitter has already been pushed about, so
+    // toggling votes across a threshold never re-fires the notification.
+    notifiedVoteMilestone: { type: Number, default: 0 },
     votedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     isDeleted: { type: Boolean, default: false, index: true },
   },

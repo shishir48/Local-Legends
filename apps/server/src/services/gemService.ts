@@ -2,9 +2,54 @@ import { Types } from 'mongoose';
 import { Gem } from '../models/Gem';
 import { ApiError } from '../utils/ApiError';
 import { deleteImage } from '../lib/imageStore';
+import { sendToUser } from '../lib/push';
 
 function withId<T extends { _id: unknown }>(doc: T) {
   return { ...doc, id: String(doc._id) };
+}
+
+// Vote counts at which a gem's submitter gets a milestone push.
+const VOTE_MILESTONES = [1, 10, 25, 50, 100, 250, 500, 1000];
+
+/** Highest milestone <= voteCount that's above what was already notified, or null. */
+export function highestMilestoneReached(voteCount: number, alreadyNotified: number): number | null {
+  let best: number | null = null;
+  for (const m of VOTE_MILESTONES) {
+    if (m <= voteCount && m > alreadyNotified) best = m;
+  }
+  return best;
+}
+
+/**
+ * Notify a gem's submitter when a vote milestone is crossed. The conditional
+ * bump of notifiedVoteMilestone is awaited (deterministic + concurrent votes
+ * claim a milestone at most once); the actual push send is fire-and-forget so
+ * it never blocks or fails the vote. Self-votes never notify.
+ */
+async function notifyMilestone(args: {
+  gemId: string;
+  gemName: string;
+  submitterId: string;
+  voterId: string;
+  voteCount: number;
+  alreadyNotified: number;
+}): Promise<void> {
+  const target = highestMilestoneReached(args.voteCount, args.alreadyNotified);
+  if (!target || args.submitterId === args.voterId) return;
+
+  // Only one concurrent vote whose filter still matches wins the claim.
+  const won = await Gem.findOneAndUpdate(
+    { _id: args.gemId, notifiedVoteMilestone: { $lt: target } },
+    { $set: { notifiedVoteMilestone: target } }
+  );
+  if (!won) return;
+
+  // Fire-and-forget — a push outage must not affect voting.
+  sendToUser(args.submitterId, {
+    title: 'Your gem is on fire 🔥',
+    body: `${args.gemName} just hit ${target} upvotes!`,
+    data: { type: 'gem_milestone', gemId: args.gemId },
+  }).catch((err) => console.warn('[push] milestone notify failed:', (err as Error).message));
 }
 
 interface ListOptions {
@@ -190,8 +235,18 @@ export async function toggleVote(gemId: string, userId: string) {
       { _id: gemId, votedBy: { $ne: userObjectId } },
       { $addToSet: { votedBy: userObjectId }, $inc: { voteCount: 1 } },
       { new: true }
-    ).select('voteCount');
-    if (updated) return { voted: true, voteCount: updated.voteCount };
+    ).select('voteCount name submittedBy notifiedVoteMilestone');
+    if (updated) {
+      await notifyMilestone({
+        gemId,
+        gemName: updated.name,
+        submitterId: updated.submittedBy.toString(),
+        voterId: userId,
+        voteCount: updated.voteCount,
+        alreadyNotified: updated.notifiedVoteMilestone ?? 0,
+      });
+      return { voted: true, voteCount: updated.voteCount };
+    }
   }
 
   // Lost the race (state already changed under us): report the live state.
