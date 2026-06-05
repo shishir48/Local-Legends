@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Local Legend',
     slug: 'local-legend',
-    version: '1.1.22',
+    version: '1.1.23',
     orientation: 'portrait',
     scheme: 'locallegend',
     updates: {
