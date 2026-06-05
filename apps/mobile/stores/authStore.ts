@@ -42,6 +42,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    // Drop this device's push token first (best-effort, needs the auth token).
+    // Lazy import avoids the authStore → push → api → authStore cycle.
+    await import('../lib/push').then(({ unregisterPush }) => unregisterPush()).catch(() => {});
     await Promise.all([
       SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {}),
       SecureStore.deleteItemAsync(USER_KEY).catch(() => {}),

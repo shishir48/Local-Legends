@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'Local Legend',
     slug: 'local-legend',
-    version: '1.1.28',
+    version: '1.2.0',
     orientation: 'portrait',
     scheme: 'locallegend',
     updates: {
@@ -17,7 +17,9 @@ module.exports = {
     // appVersion 1.1.4 → their embedded runtimeVersion is already '1.1.4',
     // so EAS updates under this runtime reach them. Only bump this string
     // when a NATIVE change (new native module / SDK) requires a rebuild.
-    runtimeVersion: '1.1.4',
+    // Bumped 1.1.4 → 1.2.0: added expo-notifications (FCM) — native module, so
+    // a new build must ship under this runtime before its OTAs reach devices.
+    runtimeVersion: '1.2.0',
     userInterfaceStyle: 'dark',
 
     icon: './assets/icon.png',
@@ -43,7 +45,10 @@ module.exports = {
 
     android: {
       package: 'com.shishir48.locallegend',
-      versionCode: 5,
+      versionCode: 6,
+      // Firebase config for FCM push. Required for the production build; kept
+      // out of git (see .gitignore). Override path with GOOGLE_SERVICES_JSON.
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './google-services.json',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#0F172A',
@@ -53,6 +58,7 @@ module.exports = {
         'ACCESS_FINE_LOCATION',
         'CAMERA',
         'READ_EXTERNAL_STORAGE',
+        'POST_NOTIFICATIONS',
       ],
     },
 
@@ -72,6 +78,8 @@ module.exports = {
           locationAlwaysAndWhenInUsePermission: 'Allow Local Legend to use your location.',
         },
       ],
+      'expo-notifications',
+      'expo-build-properties',
     ],
 
     extra: {
