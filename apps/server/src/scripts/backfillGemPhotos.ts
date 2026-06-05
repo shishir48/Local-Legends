@@ -1,6 +1,6 @@
 /**
  * One-off: backfill `photoUrl` for gems that have none, using a Google Places
- * text search (name + city) → first photo → Cloudinary.
+ * text search (name + city) → first photo → droplet image store.
  *
  * Run on the droplet after deploy:
  *   node dist/scripts/backfillGemPhotos.js
