@@ -61,6 +61,23 @@ export async function uploadBufferToCloudinary(
   });
 }
 
+/** Upload a remote image URL straight to Cloudinary (it fetches the URL). */
+export async function uploadUrlToCloudinary(url: string): Promise<UploadedAsset | null> {
+  if (!cloudinaryConfigured) return null;
+  try {
+    const result = await cloudinary.uploader.upload(url, {
+      folder: 'local-legend/gems',
+      resource_type: 'image',
+      transformation: [{ width: 1600, height: 1600, crop: 'limit' }],
+      unique_filename: true,
+    });
+    return { url: result.secure_url, publicId: result.public_id };
+  } catch (err) {
+    console.warn('[cloudinary] failed to upload from url', err);
+    return null;
+  }
+}
+
 export async function deleteCloudinaryAsset(publicId: string | null | undefined) {
   if (!publicId || !cloudinaryConfigured) return;
   try {

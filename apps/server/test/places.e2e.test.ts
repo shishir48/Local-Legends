@@ -38,6 +38,7 @@ const GOOGLE_DETAILS_RES = {
     { types: ['locality'], longText: 'Lucknow' },
     { types: ['administrative_area_level_1'], longText: 'Uttar Pradesh' },
   ],
+  photos: [{ name: 'places/PLACE_123/photos/PHOTO_REF' }],
 };
 
 function jsonResponse(body: unknown) {
@@ -179,6 +180,7 @@ describe('GET /api/places/details', () => {
       lat: 26.85,
       lng: 80.92,
       mapsUrl: 'https://maps.google.com/?cid=123',
+      photoName: 'places/PLACE_123/photos/PHOTO_REF',
     });
 
     const det = calls().find((c) => c.url.includes('/v1/places/PLACE_123'))!;

@@ -127,6 +127,7 @@ export interface PlaceDetail {
   lat: number;
   lng: number;
   mapsUrl: string;
+  photoName?: string;
 }
 
 export interface PlacePrediction {

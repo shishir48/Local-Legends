@@ -38,6 +38,7 @@ interface PlaceDetail {
   lat: number;
   lng: number;
   mapsUrl: string;
+  photoName?: string;
 }
 
 interface Prediction {
@@ -246,7 +247,8 @@ async function googlePlaceDetails(
   const d = (await fetchJsonOk(url, {
     headers: {
       'X-Goog-Api-Key': key,
-      'X-Goog-FieldMask': 'displayName,formattedAddress,location,googleMapsUri,addressComponents',
+      'X-Goog-FieldMask':
+        'displayName,formattedAddress,location,googleMapsUri,addressComponents,photos',
     },
   })) as {
     displayName?: { text: string };
@@ -254,6 +256,7 @@ async function googlePlaceDetails(
     location?: { latitude: number; longitude: number };
     googleMapsUri?: string;
     addressComponents?: Array<{ types?: string[]; longText?: string }>;
+    photos?: Array<{ name: string }>;
   };
 
   return {
@@ -263,6 +266,7 @@ async function googlePlaceDetails(
     lat: d.location?.latitude ?? 0,
     lng: d.location?.longitude ?? 0,
     mapsUrl: d.googleMapsUri ?? '',
+    photoName: d.photos?.[0]?.name,
   };
 }
 

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as gemService from '../services/gemService';
-import { uploadBufferToCloudinary } from '../lib/cloudinary';
+import { uploadBufferToCloudinary, uploadUrlToCloudinary } from '../lib/cloudinary';
+import { googlePhotoUri } from '../lib/googlePhotos';
 import {
   CreateGemSchema,
   UpdateGemSchema,
@@ -55,6 +56,16 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       if (asset) {
         photoUrl = asset.url;
         photoPublicId = asset.publicId;
+      }
+    } else if (input.googlePhotoName) {
+      // No uploaded photo — pull the place's Google photo and store it.
+      const uri = await googlePhotoUri(input.googlePhotoName);
+      if (uri) {
+        const asset = await uploadUrlToCloudinary(uri);
+        if (asset) {
+          photoUrl = asset.url;
+          photoPublicId = asset.publicId;
+        }
       }
     }
 

@@ -98,6 +98,9 @@ export default function SubmitScreen() {
           name: photo.fileName,
           type: photo.mimeType,
         } as unknown as Blob);
+      } else if (place.photoName) {
+        // No user photo — let the server fetch the place's Google photo.
+        form.append('googlePhotoName', place.photoName);
       }
       return gemsApi.create(form);
     },

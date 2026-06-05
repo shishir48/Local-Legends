@@ -10,6 +10,7 @@ export interface PlaceResult {
   lat: number;
   lng: number;
   mapsUrl: string;
+  photoName?: string;
 }
 
 interface Props {
