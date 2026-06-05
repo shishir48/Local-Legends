@@ -35,7 +35,7 @@ const GemSchema = new Schema(
     },
     mapsUrl: { type: String, default: null },
     photoUrl: { type: String, default: null },
-    photoPublicId: { type: String, default: null }, // Cloudinary id, used to delete
+    photoPublicId: { type: String, default: null }, // stored image id, used to delete
     submittedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     voteCount: { type: Number, default: 0, index: true },
     votedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
