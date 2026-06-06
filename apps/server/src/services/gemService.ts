@@ -45,9 +45,10 @@ async function notifyMilestone(args: {
   if (!won) return;
 
   // Fire-and-forget — a push outage must not affect voting.
+  const noun = target === 1 ? 'upvote' : 'upvotes';
   sendToUser(args.submitterId, {
     title: 'Your gem is on fire 🔥',
-    body: `${args.gemName} just hit ${target} upvotes!`,
+    body: `${args.gemName} just hit ${target} ${noun}!`,
     data: { type: 'gem_milestone', gemId: args.gemId },
   }).catch((err) => console.warn('[push] milestone notify failed:', (err as Error).message));
 }
