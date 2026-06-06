@@ -98,7 +98,15 @@ export default function ForgotPasswordScreen() {
               name="code"
               label="6-digit code"
               keyboardType="number-pad"
-              autoComplete="one-time-code"
+              // Code arrives by EMAIL, not SMS. The "one-time-code" hint makes
+              // Android treat this as an SMS-OTP field and some keyboards wipe
+              // typed digits while waiting for a text that never comes. Disable
+              // autofill so the user can type freely.
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+              autoCorrect={false}
+              maxLength={6}
               error={resetForm.formState.errors.code?.message}
             />
             <Field
