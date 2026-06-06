@@ -44,6 +44,8 @@ export default function RegisterScreen() {
           name="displayName"
           label="Display name"
           autoCapitalize="words"
+          autoComplete="name"
+          textContentType="name"
           error={errors.displayName?.message}
         />
         <Field
@@ -53,6 +55,7 @@ export default function RegisterScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
+          textContentType="emailAddress"
           error={errors.email?.message}
         />
         <Field
@@ -62,6 +65,7 @@ export default function RegisterScreen() {
           secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
+          textContentType="newPassword"
           error={errors.password?.message}
         />
 

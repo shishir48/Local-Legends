@@ -45,6 +45,7 @@ export default function LoginScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
+          textContentType="username"
           error={errors.email?.message}
         />
         <Field
@@ -54,6 +55,7 @@ export default function LoginScreen() {
           secureTextEntry
           autoCapitalize="none"
           autoComplete="password"
+          textContentType="password"
           error={errors.password?.message}
         />
 
