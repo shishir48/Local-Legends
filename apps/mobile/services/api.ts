@@ -137,6 +137,13 @@ export const pushApi = {
     api.delete<void>('/api/push/register', { data: { token } }).then((r) => r.data),
 };
 
+export const appVersionApi = {
+  get: () =>
+    api
+      .get<{ latestRuntimeVersion: string; androidStoreUrl: string }>('/api/app-version')
+      .then((r) => r.data),
+};
+
 export interface PlaceDetail {
   name: string;
   address: string;

@@ -15,6 +15,12 @@ const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().email().optional(),
   // Path to the Firebase service-account JSON on disk. Unset → push disabled.
   FCM_SERVICE_ACCOUNT_PATH: z.string().optional(),
+  // Latest shipped Android native build's runtimeVersion. Clients on an older
+  // runtime are nagged to update from the Play Store. Bump on each native build.
+  APP_LATEST_RUNTIME_VERSION: z.string().default('1.2.0'),
+  ANDROID_STORE_URL: z
+    .string()
+    .default('https://play.google.com/store/apps/details?id=com.shishir48.locallegend'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
