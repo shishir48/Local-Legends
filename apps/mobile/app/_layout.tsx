@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/authStore';
 import { registerForPush } from '../lib/push';
 import { colors } from '../utils/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { UpdateGate } from '../components/UpdateGate';
 import { logger, setLoggerUserIdResolver } from '../services/logger';
 
 /** Open the gem from a tapped push, if it carries a gemId. */
@@ -89,6 +90,7 @@ export default function RootLayout() {
               <Stack.Screen name="(app)" />
             </Stack>
           </AuthGate>
+          <UpdateGate />
         </SafeAreaProvider>
       </QueryClientProvider>
     </ErrorBoundary>
