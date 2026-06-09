@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Keyboard, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,18 @@ export default function GemDetailScreen() {
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const sendComment = async () => {
     if (!newComment.trim()) return;
@@ -259,6 +271,7 @@ export default function GemDetailScreen() {
           flexDirection: 'row',
           gap: spacing.sm,
           padding: spacing.sm,
+          marginBottom: keyboardHeight,
           borderTopWidth: 1,
           borderTopColor: glass.border,
           backgroundColor: colors.bg,
