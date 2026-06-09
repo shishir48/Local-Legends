@@ -111,6 +111,33 @@ describe('vote milestone side effect', () => {
   });
 });
 
+describe('comment notification side effect', () => {
+  it('creates a comment without erroring when push is unconfigured', async () => {
+    const owner = await makeUser();
+    const stranger = await makeUser();
+    const gem = await createGem(owner.token);
+
+    // Stranger comments — would notify submitter via FCM in prod, no-op in test.
+    const res = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(stranger.token))
+      .send({ text: 'Looks great!' })
+      .expect(201);
+    expect(res.body.text).toBe('Looks great!');
+  });
+
+  it('self-comment does not throw (no notify path runs)', async () => {
+    const owner = await makeUser();
+    const gem = await createGem(owner.token);
+
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'Note to self' })
+      .expect(201);
+  });
+});
+
 describe('push lib when unconfigured', () => {
   it('is disabled and sendToUser is a no-op (no throw)', async () => {
     expect(pushEnabled()).toBe(false);
