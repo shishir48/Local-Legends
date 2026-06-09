@@ -171,6 +171,7 @@ describe('gems comments', () => {
       .expect(201);
     expect(c1.body.text).toBe('Great spot!');
     expect(c1.body.user.displayName).toBe(owner.displayName);
+    expect(c1.body.parentCommentId).toBeNull();
 
     // second user comments
     const other = await makeUser();
@@ -180,11 +181,11 @@ describe('gems comments', () => {
       .send({ text: 'Second comment' })
       .expect(201);
 
-    // list (newest first)
+    // list (oldest first — UI groups by parent)
     const list = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
     expect(list.body.items).toHaveLength(2);
-    expect(list.body.items[0].text).toBe('Second comment');
-    expect(list.body.items[1].text).toBe('Great spot!');
+    expect(list.body.items[0].text).toBe('Great spot!');
+    expect(list.body.items[1].text).toBe('Second comment');
 
     // delete own comment
     await request(app)
@@ -235,6 +236,172 @@ describe('gems comments', () => {
       .delete(`/api/gems/${gem.id}/comments/${c.body.id}`)
       .set(auth(admin.token))
       .expect(204);
+  });
+});
+
+describe('gems comment replies (1-level cap)', () => {
+  it('creates a reply under a top-level comment with parentCommentId set', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const parent = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'top' })
+      .expect(201);
+
+    const reply = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'reply text', parentCommentId: parent.body.id })
+      .expect(201);
+    expect(reply.body.parentCommentId).toBe(parent.body.id);
+    expect(reply.body.text).toBe('reply text');
+
+    const list = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(list.body.items).toHaveLength(2);
+    expect(list.body.items.find((c: { id: string }) => c.id === parent.body.id).parentCommentId).toBeNull();
+    expect(list.body.items.find((c: { id: string }) => c.id === reply.body.id).parentCommentId).toBe(parent.body.id);
+  });
+
+  it('rejects a reply to a reply (enforces 1-level cap, 400)', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const parent = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'top' })
+      .expect(201);
+    const reply = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'first reply', parentCommentId: parent.body.id })
+      .expect(201);
+
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'attempted nested', parentCommentId: reply.body.id })
+      .expect(400);
+  });
+
+  it('rejects a reply to a comment on a different gem (404)', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gemA = await createGem(owner.token, { name: 'A' });
+    const gemB = await createGem(owner.token, { name: 'B' });
+
+    const cOnA = await request(app)
+      .post(`/api/gems/${gemA.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'on A' })
+      .expect(201);
+
+    await request(app)
+      .post(`/api/gems/${gemB.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'cross-gem reply', parentCommentId: cOnA.body.id })
+      .expect(404);
+  });
+
+  it('cascades delete: removing a top-level comment removes its replies and decrements count by total', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const parent = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'top' })
+      .expect(201);
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'r1', parentCommentId: parent.body.id })
+      .expect(201);
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'r2', parentCommentId: parent.body.id })
+      .expect(201);
+
+    // 3 comments, commentCount = 3
+    let detail = await request(app).get(`/api/gems/${gem.id}`).expect(200);
+    expect(detail.body.commentCount).toBe(3);
+
+    await request(app)
+      .delete(`/api/gems/${gem.id}/comments/${parent.body.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    const after = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(after.body.items).toHaveLength(0);
+
+    detail = await request(app).get(`/api/gems/${gem.id}`).expect(200);
+    expect(detail.body.commentCount).toBe(0);
+  });
+
+  it('deleting a reply leaves the parent and decrements count by 1', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const parent = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'top' })
+      .expect(201);
+    const reply = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'reply', parentCommentId: parent.body.id })
+      .expect(201);
+
+    await request(app)
+      .delete(`/api/gems/${gem.id}/comments/${reply.body.id}`)
+      .set(auth(replier.token))
+      .expect(204);
+
+    const after = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(after.body.items).toHaveLength(1);
+    expect(after.body.items[0].id).toBe(parent.body.id);
+
+    const detail = await request(app).get(`/api/gems/${gem.id}`).expect(200);
+    expect(detail.body.commentCount).toBe(1);
+  });
+});
+
+describe('gem commentCount', () => {
+  it('starts at 0 and reflects create/delete on detail and list', async () => {
+    const owner = await makeUser();
+    const replier = await makeUser();
+    const gem = await createGem(owner.token);
+
+    let detail = await request(app).get(`/api/gems/${gem.id}`).expect(200);
+    expect(detail.body.commentCount).toBe(0);
+
+    let list = await request(app).get('/api/gems').expect(200);
+    expect(list.body.items[0].commentCount).toBe(0);
+
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'one' })
+      .expect(201);
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(replier.token))
+      .send({ text: 'two' })
+      .expect(201);
+
+    detail = await request(app).get(`/api/gems/${gem.id}`).expect(200);
+    expect(detail.body.commentCount).toBe(2);
+
+    list = await request(app).get('/api/gems').expect(200);
+    expect(list.body.items[0].commentCount).toBe(2);
   });
 });
 

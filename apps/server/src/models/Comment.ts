@@ -5,6 +5,12 @@ const CommentSchema = new Schema(
     gem: { type: Schema.Types.ObjectId, ref: 'Gem', required: true, index: true },
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     text: { type: String, required: true, maxlength: 500, trim: true },
+    parentCommentId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Comment',
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );

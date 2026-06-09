@@ -57,9 +57,12 @@ export function useComments(gemId: string | undefined) {
 export function useCreateComment(gemId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (text: string) => commentsApi.create(gemId, text),
+    mutationFn: (input: { text: string; parentCommentId?: string | null }) =>
+      commentsApi.create(gemId, input.text, input.parentCommentId ?? null),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comments', gemId] });
+      qc.invalidateQueries({ queryKey: ['gem', gemId] });
+      qc.invalidateQueries({ queryKey: ['gems'] });
     },
   });
 }
@@ -70,6 +73,8 @@ export function useDeleteComment(gemId: string) {
     mutationFn: (commentId: string) => commentsApi.remove(gemId, commentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comments', gemId] });
+      qc.invalidateQueries({ queryKey: ['gem', gemId] });
+      qc.invalidateQueries({ queryKey: ['gems'] });
     },
   });
 }

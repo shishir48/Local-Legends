@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Keyboard, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGem, useComments, useCreateComment, useDeleteComment } from '../../../hooks/useGems';
-import { gemsApi } from '../../../services/api';
+import { gemsApi, type Comment } from '../../../services/api';
 import { useAuthStore } from '../../../stores/authStore';
 import { VoteButton } from '../../../components/VoteButton';
 import { AmbientGlow } from '../../../components/AmbientGlow';
@@ -22,6 +22,8 @@ export default function GemDetailScreen() {
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
@@ -38,11 +40,32 @@ export default function GemDetailScreen() {
   const sendComment = async () => {
     if (!newComment.trim()) return;
     try {
-      await createComment.mutateAsync(newComment.trim());
+      await createComment.mutateAsync({ text: newComment.trim(), parentCommentId: null });
       setNewComment('');
     } catch {
       Alert.alert('Could not post comment', 'Try again.');
     }
+  };
+
+  const sendReply = async (parentCommentId: string) => {
+    if (!replyText.trim()) return;
+    try {
+      await createComment.mutateAsync({ text: replyText.trim(), parentCommentId });
+      setReplyText('');
+      setReplyingTo(null);
+    } catch {
+      Alert.alert('Could not post reply', 'Try again.');
+    }
+  };
+
+  const startReply = (parentCommentId: string) => {
+    setReplyText('');
+    setReplyingTo(parentCommentId);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setReplyText('');
   };
 
   if (gem.isLoading) {
@@ -92,6 +115,27 @@ export default function GemDetailScreen() {
   };
 
   const commentList = comments.data?.items ?? [];
+  // Top-level first (newest), replies grouped under each parent (oldest first).
+  const topLevel = useMemo(
+    () =>
+      commentList
+        .filter((c) => !c.parentCommentId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [commentList]
+  );
+  const repliesByParent = useMemo(() => {
+    const map = new Map<string, Comment[]>();
+    for (const c of commentList) {
+      if (c.parentCommentId) {
+        const arr = map.get(c.parentCommentId) ?? [];
+        arr.push(c);
+        map.set(c.parentCommentId, arr);
+      }
+    }
+    return map;
+  }, [commentList]);
+
+  const canDelete = (c: Comment) => !!user && (user.isAdmin || user.id === c.user._id);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -225,41 +269,71 @@ export default function GemDetailScreen() {
           ) : commentList.length === 0 ? (
             <Text style={[text.muted, { marginBottom: spacing.md }]}>No comments yet.</Text>
           ) : (
-            commentList.map((c) => (
-              <View
-                key={c.id}
-                style={{
-                  flexDirection: 'row',
-                  paddingVertical: spacing.sm,
-                  borderBottomWidth: 1,
-                  borderBottomColor: glass.border,
-                }}
-              >
-                {c.user.avatarUrl ? (
-                  <Image source={{ uri: c.user.avatarUrl }} style={{ width: 28, height: 28, borderRadius: 14, marginRight: spacing.sm }} />
-                ) : (
-                  <View style={{ width: 28, height: 28, borderRadius: 14, marginRight: spacing.sm, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="person" size={14} color={colors.textMuted} />
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[text.body, { fontWeight: '600', fontSize: 13 }]}>{c.user.displayName}</Text>
-                    <Text style={[text.muted, { marginLeft: spacing.sm, fontSize: 11 }]}>{formatTimeAgo(c.createdAt)}</Text>
-                    {user && (user.isAdmin || user.id === c.user._id) && (
+            topLevel.map((c) => {
+              const replies = repliesByParent.get(c.id) ?? [];
+              return (
+                <View key={c.id} style={{ marginBottom: spacing.md }}>
+                  <CommentRow
+                    c={c}
+                    canDelete={canDelete(c)}
+                    onDelete={() => deleteComment.mutate(c.id)}
+                    onReply={user ? () => startReply(c.id) : undefined}
+                  />
+                  {replies.map((r) => (
+                    <View key={r.id} style={{ marginLeft: spacing.lg, marginTop: spacing.xs, paddingLeft: spacing.sm, borderLeftWidth: 2, borderLeftColor: glass.border }}>
+                      <CommentRow
+                        c={r}
+                        canDelete={canDelete(r)}
+                        onDelete={() => deleteComment.mutate(r.id)}
+                      />
+                    </View>
+                  ))}
+                  {replyingTo === c.id ? (
+                    <View style={{ marginLeft: spacing.lg, marginTop: spacing.sm, flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-end' }}>
+                      <TextInput
+                        value={replyText}
+                        onChangeText={setReplyText}
+                        placeholder={`Reply to ${c.user.displayName}…`}
+                        placeholderTextColor={colors.textMuted}
+                        multiline
+                        autoFocus
+                        style={{
+                          flex: 1,
+                          backgroundColor: glass.fill,
+                          color: colors.text,
+                          borderWidth: 1,
+                          borderColor: glass.border,
+                          borderRadius: radius.md,
+                          padding: spacing.sm,
+                          fontSize: 13,
+                          maxHeight: 80,
+                        }}
+                      />
                       <Pressable
-                        onPress={() => deleteComment.mutate(c.id)}
+                        onPress={cancelReply}
                         hitSlop={8}
-                        style={{ marginLeft: 'auto' }}
+                        style={{ padding: spacing.xs }}
                       >
-                        <Ionicons name="trash-outline" size={14} color={colors.textMuted} />
+                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>Cancel</Text>
                       </Pressable>
-                    )}
-                  </View>
-                  <Text style={[text.body, { marginTop: 2, fontSize: 14, lineHeight: 20 }]}>{c.text}</Text>
+                      <Pressable
+                        onPress={() => sendReply(c.id)}
+                        disabled={createComment.isPending || !replyText.trim()}
+                        style={({ pressed }) => ({
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: spacing.md,
+                          paddingVertical: spacing.sm,
+                          borderRadius: radius.md,
+                          opacity: pressed || createComment.isPending || !replyText.trim() ? 0.5 : 1,
+                        })}
+                      >
+                        <Ionicons name="send" size={14} color={colors.bg} />
+                      </Pressable>
+                    </View>
+                  ) : null}
                 </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </View>
@@ -314,6 +388,46 @@ export default function GemDetailScreen() {
           </Pressable>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+interface CommentRowProps {
+  c: Comment;
+  canDelete: boolean;
+  onDelete: () => void;
+  onReply?: () => void;
+}
+
+function CommentRow({ c, canDelete, onDelete, onReply }: CommentRowProps) {
+  return (
+    <View style={{ flexDirection: 'row', paddingVertical: spacing.sm }}>
+      {c.user.avatarUrl ? (
+        <Image source={{ uri: c.user.avatarUrl }} style={{ width: 28, height: 28, borderRadius: 14, marginRight: spacing.sm }} />
+      ) : (
+        <View style={{ width: 28, height: 28, borderRadius: 14, marginRight: spacing.sm, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="person" size={14} color={colors.textMuted} />
+        </View>
+      )}
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[text.body, { fontWeight: '600', fontSize: 13 }]}>{c.user.displayName}</Text>
+          <Text style={[text.muted, { marginLeft: spacing.sm, fontSize: 11 }]}>{formatTimeAgo(c.createdAt)}</Text>
+        </View>
+        <Text style={[text.body, { marginTop: 2, fontSize: 14, lineHeight: 20 }]}>{c.text}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: spacing.md }}>
+          {onReply ? (
+            <Pressable onPress={onReply} hitSlop={8} accessibilityRole="button" accessibilityLabel="Reply to comment">
+              <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>Reply</Text>
+            </Pressable>
+          ) : null}
+          {canDelete ? (
+            <Pressable onPress={onDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete comment">
+              <Ionicons name="trash-outline" size={14} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
     </View>
   );
 }

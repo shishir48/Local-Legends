@@ -41,6 +41,7 @@ const GemSchema = new Schema(
     // Highest vote milestone the submitter has already been pushed about, so
     // toggling votes across a threshold never re-fires the notification.
     notifiedVoteMilestone: { type: Number, default: 0 },
+    commentCount: { type: Number, default: 0 },
     votedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     isDeleted: { type: Boolean, default: false, index: true },
   },

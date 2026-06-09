@@ -62,6 +62,7 @@ export interface Gem {
   location: { type: 'Point'; coordinates: [number, number] };
   photoUrl: string | null;
   voteCount: number;
+  commentCount: number;
   votedBy: string[];
   submittedBy: { _id: string; displayName: string; avatarUrl: string | null } | string;
   createdAt: string;
@@ -142,13 +143,14 @@ export interface Comment {
   text: string;
   user: { _id: string; displayName: string; avatarUrl: string | null };
   createdAt: string;
+  parentCommentId: string | null;
 }
 
 export const commentsApi = {
   list: (gemId: string) =>
     api.get<{ items: Comment[] }>(`/api/gems/${gemId}/comments`).then((r) => r.data),
-  create: (gemId: string, text: string) =>
-    api.post<Comment>(`/api/gems/${gemId}/comments`, { text }).then((r) => r.data),
+  create: (gemId: string, text: string, parentCommentId: string | null = null) =>
+    api.post<Comment>(`/api/gems/${gemId}/comments`, { text, parentCommentId }).then((r) => r.data),
   remove: (gemId: string, commentId: string) =>
     api.delete<void>(`/api/gems/${gemId}/comments/${commentId}`).then((r) => r.data),
 };

@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
 import { Comment } from '../models/Comment';
 import { Gem } from '../models/Gem';
 import { User } from '../models/User';
@@ -9,13 +10,14 @@ import { sendToUser } from '../lib/push';
 
 const CreateCommentSchema = z.object({
   text: z.string().min(1).max(500).trim(),
+  parentCommentId: z.string().nullable().optional(),
 });
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const gemId = ObjectIdSchema.parse(req.params.gemId);
     const comments = await Comment.find({ gem: gemId })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 }) // oldest first within each thread; UI groups by parent
       .populate('user', 'displayName avatarUrl')
       .lean();
 
@@ -28,24 +30,43 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const gemId = ObjectIdSchema.parse(req.params.gemId);
-    const { text } = CreateCommentSchema.parse(req.body);
+    const { text, parentCommentId } = CreateCommentSchema.parse(req.body);
+
+    let parent: { _id: Types.ObjectId; parentCommentId: Types.ObjectId | null } | null = null;
+    if (parentCommentId) {
+      const parsedParentId = ObjectIdSchema.parse(parentCommentId);
+      const found = await Comment.findOne({ _id: parsedParentId, gem: gemId })
+        .select('_id parentCommentId')
+        .lean();
+      if (!found) throw ApiError.notFound('Parent comment not found');
+      // 1-level cap enforced server-side: only top-level comments accept replies.
+      if (found.parentCommentId) {
+        throw ApiError.badRequest('Replies cannot be nested further');
+      }
+      parent = found as { _id: Types.ObjectId; parentCommentId: Types.ObjectId | null };
+    }
 
     const comment = await Comment.create({
       gem: gemId,
       user: req.user!._id,
       text,
+      parentCommentId: parent ? parent._id : null,
     });
+
+    await Gem.updateOne({ _id: gemId }, { $inc: { commentCount: 1 } });
 
     const populated = await comment.populate('user', 'displayName avatarUrl');
 
-    // Fire-and-forget — never block or fail the comment on a push outage.
-    // Self-comments never notify.
-    notifyCommenter({
-      gemId,
-      commentId: String(comment._id),
-      commenterId: req.user!.id,
-      commentText: text,
-    }).catch((err) => console.warn('[push] comment notify failed:', (err as Error).message));
+    // Only top-level comments notify the gem submitter (matches original behaviour;
+    // replies could spam them and we don't have reply-to-commenter targeting yet).
+    if (!parent) {
+      notifyCommenter({
+        gemId,
+        commentId: String(comment._id),
+        commenterId: req.user!.id,
+        commentText: text,
+      }).catch((err) => console.warn('[push] comment notify failed:', (err as Error).message));
+    }
 
     res.status(201).json(populated.toJSON());
   } catch (err) {
@@ -95,7 +116,15 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
       throw ApiError.forbidden('You can only delete your own comments');
     }
 
+    // Top-level delete cascades to its replies; reply delete is just the one row.
+    let deletedCount = 1;
+    if (!comment.parentCommentId) {
+      const res = await Comment.deleteMany({ parentCommentId: comment._id });
+      deletedCount = 1 + (res.deletedCount ?? 0);
+    }
     await Comment.deleteOne({ _id: commentId });
+    await Gem.updateOne({ _id: gemId }, { $inc: { commentCount: -deletedCount } });
+
     res.status(204).send();
   } catch (err) {
     next(err);
