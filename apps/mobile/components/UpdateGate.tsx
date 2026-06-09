@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
-import { checkForUpdate, applyOtaUpdate, openStore, type UpdateKind } from '../lib/appUpdate';
+import { checkForUpdate, openStore, type UpdateKind } from '../lib/appUpdate';
 import { colors, radius, spacing, text } from '../utils/theme';
 
 /**
- * Checks for an update on mount and, if one is pending, shows a dismissible
- * modal nudging the user to update — OTA (applied in-app) or a Play Store
- * version (opens the store). "Later" dismisses; it returns next launch.
+ * Checks for a native update on mount and, if one is pending, shows a
+ * dismissible modal nudging the user to update from the Play Store. "Later"
+ * dismisses; it returns next launch.
  */
 export function UpdateGate() {
   const [kind, setKind] = useState<UpdateKind>(null);
@@ -24,22 +24,15 @@ export function UpdateGate() {
 
   if (!kind) return null;
 
-  const isOta = kind === 'ota';
-  const title = isOta ? 'Update ready ✨' : 'Please update 🙏';
-  const body = isOta
-    ? "A fresh version of Local Legend is ready. Update now — it takes a second and keeps everything running smoothly."
-    : "You're on an old version. Please update from the Play Store so you don't miss new gems and features. 🙏";
-  const cta = isOta ? 'Update now' : 'Update';
+  const title = 'Please update 🙏';
+  const body = "You're on an old version. Please update from the Play Store so you don't miss new gems and features. 🙏";
+  const cta = 'Update';
 
   const onUpdate = async () => {
     setBusy(true);
     try {
-      if (isOta) {
-        await applyOtaUpdate(); // fetches + relaunches into the new bundle
-      } else {
-        await openStore();
-        setKind(null);
-      }
+      await openStore();
+      setKind(null);
     } catch {
       setBusy(false);
     }

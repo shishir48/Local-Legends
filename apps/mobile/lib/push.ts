@@ -7,6 +7,33 @@ import { pushApi } from '../services/api';
 const ASKED_KEY = 'll.push.asked';
 const TOKEN_KEY = 'll.push.token';
 
+const LAST_PROMPT_KEY = 'll.push.lastPrompt';
+const PROMPT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+export async function shouldShowDailyPrompt(): Promise<boolean> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') return false;
+
+    const last = await SecureStore.getItemAsync(LAST_PROMPT_KEY);
+    if (last) {
+      const elapsed = Date.now() - Number(last);
+      if (elapsed < PROMPT_INTERVAL_MS) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function markPromptShown(): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(LAST_PROMPT_KEY, String(Date.now()));
+  } catch {
+    // best-effort
+  }
+}
+
 /** Show foreground pushes as a banner too (not just in the tray). */
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

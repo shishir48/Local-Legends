@@ -10,6 +10,7 @@ import { registerForPush } from '../lib/push';
 import { colors } from '../utils/theme';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { UpdateGate } from '../components/UpdateGate';
+import { PushGate } from '../components/PushGate';
 import { logger, setLoggerUserIdResolver } from '../services/logger';
 
 /** Open the gem from a tapped push, if it carries a gemId. */
@@ -91,6 +92,7 @@ export default function RootLayout() {
             </Stack>
           </AuthGate>
           <UpdateGate />
+          <PushGate />
         </SafeAreaProvider>
       </QueryClientProvider>
     </ErrorBoundary>
