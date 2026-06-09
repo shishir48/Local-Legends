@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { app, auth, makeUser, gemPayload } from './helpers';
+import { User } from '../src/models/User';
 
 describe('PATCH /api/users/me', () => {
   it('updates the display name', async () => {
@@ -43,13 +44,14 @@ describe('GET /api/users/:id/gems', () => {
     expect(res.body.items.every((g: { id: string }) => typeof g.id === 'string')).toBe(true);
   });
 
-  it('returns the submitter’s public profile, without email', async () => {
+  it('returns public profile with followersCount, without email', async () => {
     const owner = await makeUser();
     const res = await request(app).get(`/api/users/${owner.id}/gems`).expect(200);
-    expect(res.body.user).toEqual({
+    expect(res.body.user).toMatchObject({
       id: owner.id,
       displayName: expect.any(String),
       avatarUrl: null,
+      followersCount: expect.any(Number),
     });
     expect(res.body.user.email).toBeUndefined();
   });
@@ -60,5 +62,65 @@ describe('GET /api/users/:id/gems', () => {
 
   it('rejects a malformed user id (400)', async () => {
     await request(app).get('/api/users/nope/gems').expect(400);
+  });
+
+  it('includes isFollowing when the viewer is logged in', async () => {
+    const owner = await makeUser({ displayName: 'Alice' });
+    const viewer = await makeUser({ displayName: 'Bob' });
+
+    const res = await request(app)
+      .get(`/api/users/${owner.id}/gems`)
+      .set(auth(viewer.token))
+      .expect(200);
+    expect(res.body.isFollowing).toBe(false);
+  });
+});
+
+describe('POST /api/users/:id/follow', () => {
+  it('toggles follow on/off and returns updated counts', async () => {
+    const owner = await makeUser();
+    const follower = await makeUser();
+
+    // follow
+    const res1 = await request(app)
+      .post(`/api/users/${owner.id}/follow`)
+      .set(auth(follower.token))
+      .expect(200);
+    expect(res1.body).toEqual({ following: true, followersCount: 1 });
+
+    // verify isFollowing in profile
+    const profile = await request(app)
+      .get(`/api/users/${owner.id}/gems`)
+      .set(auth(follower.token))
+      .expect(200);
+    expect(profile.body.isFollowing).toBe(true);
+
+    // unfollow
+    const res2 = await request(app)
+      .post(`/api/users/${owner.id}/follow`)
+      .set(auth(follower.token))
+      .expect(200);
+    expect(res2.body).toEqual({ following: false, followersCount: 0 });
+  });
+
+  it('blocks self-follow (400)', async () => {
+    const u = await makeUser();
+    await request(app)
+      .post(`/api/users/${u.id}/follow`)
+      .set(auth(u.token))
+      .expect(400);
+  });
+
+  it('requires auth', async () => {
+    const u = await makeUser();
+    await request(app).post(`/api/users/${u.id}/follow`).expect(401);
+  });
+
+  it('returns 404 for a non-existent user', async () => {
+    const u = await makeUser();
+    await request(app)
+      .post('/api/users/64b8f0f0f0f0f0f0f0f0f0f0/follow')
+      .set(auth(u.token))
+      .expect(404);
   });
 });

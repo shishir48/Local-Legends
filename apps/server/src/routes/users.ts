@@ -6,5 +6,6 @@ const router = Router();
 
 router.patch('/me', requireAuth, userController.updateMe);
 router.get('/:id/gems', userController.gemsBySubmitter);
+router.post('/:id/follow', requireAuth, userController.toggleFollow);
 
 export default router;

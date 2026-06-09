@@ -14,6 +14,8 @@ const UserSchema = new Schema(
     displayName: { type: String, required: true, trim: true, maxlength: 50 },
     avatarUrl: { type: String, default: null },
     isAdmin: { type: Boolean, default: false },
+    following: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     resetCodeHash: { type: String, default: null },
     resetCodeExpires: { type: Date, default: null },
     resetAttempts: { type: Number, default: 0 },

@@ -78,3 +78,13 @@ export function useDeleteComment(gemId: string) {
     },
   });
 }
+
+export function useFollow(userId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => usersApi.follow(userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-gems', userId] });
+    },
+  });
+}

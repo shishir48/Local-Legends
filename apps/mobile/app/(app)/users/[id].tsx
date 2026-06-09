@@ -1,8 +1,9 @@
-import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useUserGems } from '../../../hooks/useGems';
+import { useUserGems, useFollow } from '../../../hooks/useGems';
+import { useAuthStore } from '../../../stores/authStore';
 import { GemCard } from '../../../components/GemCard';
 import { GemCardSkeleton } from '../../../components/GemCardSkeleton';
 import { AmbientGlow } from '../../../components/AmbientGlow';
@@ -31,6 +32,8 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const profile = useUserGems(id);
+  const currentUser = useAuthStore((s) => s.user);
+  const follow = useFollow(id!);
 
   if (profile.isLoading) {
     return (
@@ -51,7 +54,8 @@ export default function PublicProfileScreen() {
     );
   }
 
-  const { user, items, totalUpvotes } = profile.data;
+  const { user, items, totalUpvotes, isFollowing } = profile.data;
+  const isOwnProfile = !!currentUser && currentUser.id === id;
 
   const header = (
     <View style={{ paddingVertical: spacing.lg }}>
@@ -75,12 +79,40 @@ export default function PublicProfileScreen() {
         )}
         <View style={{ flex: 1 }}>
           <Text style={text.h2}>{user.displayName}</Text>
+          {!isOwnProfile && currentUser ? (
+            <Pressable
+              onPress={() => follow.mutate()}
+              disabled={follow.isPending}
+              style={({ pressed }) => ({
+                marginTop: spacing.xs,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.xs,
+                borderRadius: radius.pill,
+                borderWidth: 1,
+                borderColor: isFollowing ? glass.border : colors.primary,
+                backgroundColor: isFollowing ? glass.fill : colors.primary,
+                alignSelf: 'flex-start',
+                opacity: pressed || follow.isPending ? 0.6 : 1,
+              })}
+            >
+              <Text style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: isFollowing ? colors.textMuted : colors.bg,
+              }}>
+                {follow.isPending ? '…' : isFollowing ? 'Following' : 'Follow'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
       <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
         <StatCard value={items.length} label="Gems" />
         <StatCard value={formatVotes(totalUpvotes)} label="Upvotes received" />
+        {user.followersCount !== undefined ? (
+          <StatCard value={user.followersCount} label="Followers" />
+        ) : null}
       </View>
 
       <Text style={[text.h2, { marginBottom: spacing.md }]}>

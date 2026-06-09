@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Gem } from '../models/Gem';
 import { Comment } from '../models/Comment';
+import { User } from '../models/User';
 import { ApiError } from '../utils/ApiError';
 import { deleteImage } from '../lib/imageStore';
 import { sendToUser } from '../lib/push';
@@ -169,7 +170,7 @@ interface CreateGemInput {
 }
 
 export async function createGem(input: CreateGemInput) {
-  return Gem.create({
+  const gem = await Gem.create({
     name: input.name,
     category: input.category,
     description: input.description,
@@ -181,6 +182,27 @@ export async function createGem(input: CreateGemInput) {
     photoPublicId: input.photoPublicId ?? null,
     submittedBy: input.submittedBy,
   });
+
+  // Fire-and-forget: notify followers about the new gem.
+  notifyFollowers(gem.name, String(input.submittedBy)).catch(
+    (err) => console.warn('[push] follower notify failed:', (err as Error).message),
+  );
+
+  return gem;
+}
+
+async function notifyFollowers(gemName: string, submitterId: string): Promise<void> {
+  const submitter = await User.findById(submitterId).select('displayName followers').lean();
+  if (!submitter || !submitter.followers?.length) return;
+
+  const title = `✨ ${submitter.displayName} shared a new gem`;
+  for (const followerId of submitter.followers) {
+    sendToUser(String(followerId), {
+      title,
+      body: gemName,
+      data: { type: 'new_gem' },
+    }).catch((err) => console.warn('[push] follower send failed:', (err as Error).message));
+  }
 }
 
 interface UpdateGemPatch {

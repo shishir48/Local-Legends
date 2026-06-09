@@ -116,15 +116,25 @@ export interface PublicUser {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  followersCount?: number;
+}
+
+export interface UserGemsResponse {
+  user: PublicUser;
+  items: Gem[];
+  totalUpvotes: number;
+  isFollowing?: boolean;
 }
 
 export const usersApi = {
   gemsBySubmitter: (id: string) =>
     api
-      .get<{ user: PublicUser; items: Gem[]; totalUpvotes: number }>(`/api/users/${id}/gems`)
+      .get<UserGemsResponse>(`/api/users/${id}/gems`)
       .then((r) => r.data),
   updateMe: (patch: { displayName?: string; avatarUrl?: string | null }) =>
     api.patch<AuthUser>('/api/users/me', patch).then((r) => r.data),
+  follow: (id: string) =>
+    api.post<{ following: boolean; followersCount: number }>(`/api/users/${id}/follow`).then((r) => r.data),
 };
 
 export const categoriesApi = {
