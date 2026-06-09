@@ -84,13 +84,12 @@ export default function GemDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <AmbientGlow />
+      <Stack.Screen options={{ title: g.name }} />
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: spacing.xxl }}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
         keyboardShouldPersistTaps="handled"
       >
-      <Stack.Screen options={{ title: g.name }} />
-
       {g.photoUrl ? (
         <Image source={{ uri: g.photoUrl }} style={{ width: '100%', height: 280, backgroundColor: colors.surfaceAlt }} />
       ) : (
@@ -203,8 +202,8 @@ export default function GemDetailScreen() {
           </Pressable>
         ) : null}
 
-        {/* Comments section */}
-        <View style={{ marginTop: spacing.xxl }}>
+        {/* Comments list */}
+        <View style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
           <Text style={[text.h2, { marginBottom: spacing.md }]}>
             Comments{commentList.length > 0 ? ` (${commentList.length})` : ''}
           </Text>
@@ -250,55 +249,58 @@ export default function GemDetailScreen() {
               </View>
             ))
           )}
-
-          {/* Comment input */}
-          {user ? (
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
-              <TextInput
-                value={newComment}
-                onChangeText={setNewComment}
-                placeholder="Add a comment…"
-                placeholderTextColor={colors.textMuted}
-                multiline
-                style={{
-                  flex: 1,
-                  backgroundColor: glass.fill,
-                  color: colors.text,
-                  borderWidth: 1,
-                  borderColor: glass.border,
-                  borderRadius: radius.md,
-                  padding: spacing.sm,
-                  fontSize: 14,
-                  maxHeight: 80,
-                }}
-              />
-              <Pressable
-                onPress={sendComment}
-                disabled={createComment.isPending || !newComment.trim()}
-                style={({ pressed }) => ({
-                  backgroundColor: colors.primary,
-                  paddingHorizontal: spacing.lg,
-                  borderRadius: radius.md,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: pressed || createComment.isPending || !newComment.trim() ? 0.5 : 1,
-                })}
-              >
-                {createComment.isPending ? (
-                  <ActivityIndicator size="small" color={colors.bg} />
-                ) : (
-                  <Ionicons name="send" size={18} color={colors.bg} />
-                )}
-              </Pressable>
-            </View>
-          ) : (
-            <Text style={[text.muted, { marginTop: spacing.md, textAlign: 'center' }]}>
-              Sign in to leave a comment.
-            </Text>
-          )}
         </View>
       </View>
       </ScrollView>
+
+      {/* Fixed bottom input bar */}
+      {user ? (
+        <View style={{
+          flexDirection: 'row',
+          gap: spacing.sm,
+          padding: spacing.sm,
+          borderTopWidth: 1,
+          borderTopColor: glass.border,
+          backgroundColor: colors.bg,
+        }}>
+          <TextInput
+            value={newComment}
+            onChangeText={setNewComment}
+            placeholder="Add a comment…"
+            placeholderTextColor={colors.textMuted}
+            multiline
+            style={{
+              flex: 1,
+              backgroundColor: glass.fill,
+              color: colors.text,
+              borderWidth: 1,
+              borderColor: glass.border,
+              borderRadius: radius.md,
+              padding: spacing.sm,
+              fontSize: 14,
+              maxHeight: 80,
+            }}
+          />
+          <Pressable
+            onPress={sendComment}
+            disabled={createComment.isPending || !newComment.trim()}
+            style={({ pressed }) => ({
+              backgroundColor: colors.primary,
+              paddingHorizontal: spacing.lg,
+              borderRadius: radius.md,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed || createComment.isPending || !newComment.trim() ? 0.5 : 1,
+            })}
+          >
+            {createComment.isPending ? (
+              <ActivityIndicator size="small" color={colors.bg} />
+            ) : (
+              <Ionicons name="send" size={18} color={colors.bg} />
+            )}
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
