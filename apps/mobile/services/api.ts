@@ -137,6 +137,22 @@ export const pushApi = {
     api.delete<void>('/api/push/register', { data: { token } }).then((r) => r.data),
 };
 
+export interface Comment {
+  id: string;
+  text: string;
+  user: { _id: string; displayName: string; avatarUrl: string | null };
+  createdAt: string;
+}
+
+export const commentsApi = {
+  list: (gemId: string) =>
+    api.get<{ items: Comment[] }>(`/api/gems/${gemId}/comments`).then((r) => r.data),
+  create: (gemId: string, text: string) =>
+    api.post<Comment>(`/api/gems/${gemId}/comments`, { text }).then((r) => r.data),
+  remove: (gemId: string, commentId: string) =>
+    api.delete<void>(`/api/gems/${gemId}/comments/${commentId}`).then((r) => r.data),
+};
+
 export const appVersionApi = {
   get: () =>
     api

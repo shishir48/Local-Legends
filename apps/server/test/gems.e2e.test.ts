@@ -150,6 +150,94 @@ describe('gems validation', () => {
   });
 });
 
+describe('gems comments', () => {
+  it('lists comments for a gem (empty)', async () => {
+    const owner = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const res = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(res.body.items).toEqual([]);
+  });
+
+  it('creates, lists, and deletes a comment', async () => {
+    const owner = await makeUser();
+    const gem = await createGem(owner.token);
+
+    // create
+    const c1 = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'Great spot!' })
+      .expect(201);
+    expect(c1.body.text).toBe('Great spot!');
+    expect(c1.body.user.displayName).toBe(owner.displayName);
+
+    // second user comments
+    const other = await makeUser();
+    await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(other.token))
+      .send({ text: 'Second comment' })
+      .expect(201);
+
+    // list (newest first)
+    const list = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(list.body.items).toHaveLength(2);
+    expect(list.body.items[0].text).toBe('Second comment');
+    expect(list.body.items[1].text).toBe('Great spot!');
+
+    // delete own comment
+    await request(app)
+      .delete(`/api/gems/${gem.id}/comments/${c1.body.id}`)
+      .set(auth(owner.token))
+      .expect(204);
+
+    const after = await request(app).get(`/api/gems/${gem.id}/comments`).expect(200);
+    expect(after.body.items).toHaveLength(1);
+  });
+
+  it('requires auth to create a comment', async () => {
+    const owner = await makeUser();
+    const gem = await createGem(owner.token);
+    await request(app).post(`/api/gems/${gem.id}/comments`).send({ text: 'nope' }).expect(401);
+  });
+
+  it('forbids deleting someone else’s comment (403)', async () => {
+    const owner = await makeUser();
+    const other = await makeUser();
+    const gem = await createGem(owner.token);
+
+    const c = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'mine' })
+      .expect(201);
+
+    await request(app)
+      .delete(`/api/gems/${gem.id}/comments/${c.body.id}`)
+      .set(auth(other.token))
+      .expect(403);
+  });
+
+  it('lets admin delete any comment (204)', async () => {
+    const owner = await makeUser();
+    const admin = await makeUser();
+    await User.updateOne({ _id: admin.id }, { $set: { isAdmin: true } });
+    const gem = await createGem(owner.token);
+
+    const c = await request(app)
+      .post(`/api/gems/${gem.id}/comments`)
+      .set(auth(owner.token))
+      .send({ text: 'admin can remove' })
+      .expect(201);
+
+    await request(app)
+      .delete(`/api/gems/${gem.id}/comments/${c.body.id}`)
+      .set(auth(admin.token))
+      .expect(204);
+  });
+});
+
 describe('GET /api/gems pagination & filters', () => {
   it('paginates and filters by category', async () => {
     const owner = await makeUser();

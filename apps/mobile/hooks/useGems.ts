@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { gemsApi, categoriesApi, usersApi } from '../services/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { gemsApi, categoriesApi, usersApi, commentsApi } from '../services/api';
 
 export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent' } = {}) {
   return useQuery({
@@ -43,5 +43,33 @@ export function useUserGems(userId: string | undefined) {
     enabled: !!userId,
     queryKey: ['user-gems', userId],
     queryFn: () => usersApi.gemsBySubmitter(userId!),
+  });
+}
+
+export function useComments(gemId: string | undefined) {
+  return useQuery({
+    enabled: !!gemId,
+    queryKey: ['comments', gemId],
+    queryFn: () => commentsApi.list(gemId!),
+  });
+}
+
+export function useCreateComment(gemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) => commentsApi.create(gemId, text),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comments', gemId] });
+    },
+  });
+}
+
+export function useDeleteComment(gemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: string) => commentsApi.remove(gemId, commentId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comments', gemId] });
+    },
   });
 }
