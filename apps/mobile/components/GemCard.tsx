@@ -145,7 +145,7 @@ export function GemCard({ gem, highlight = false }: Props) {
                 </View>
 
                 {/* Vote row */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
                   <View style={{
                     backgroundColor: 'rgba(245,158,11,0.12)',
                     borderRadius: radius.sm,
@@ -173,7 +173,7 @@ export function GemCard({ gem, highlight = false }: Props) {
                   }}>
                     upvotes
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginLeft: spacing.sm }}>
                     <Ionicons name="chatbubble-outline" size={rf(12)} color="rgba(255,255,255,0.45)" />
                     <Text style={{ color: 'rgba(255,255,255,0.55)', fontSize: rf(12), fontWeight: '600' }}>
                       {formatVotes(gem.commentCount)}
@@ -272,7 +272,7 @@ export function GemCard({ gem, highlight = false }: Props) {
             <Text style={{ color: colors.primarySoft, fontWeight: '800', fontSize: rf(16), marginTop: 1 }}>
               {formatVotes(gem.voteCount)}
             </Text>
-            {gem.commentCount > 0 ? (
+            {gem.commentCount !== undefined ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
                 <Ionicons name="chatbubble-outline" size={rf(9)} color={colors.textMuted} />
                 <Text style={{ color: colors.textMuted, fontSize: rf(10), fontWeight: '600' }}>

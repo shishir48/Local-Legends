@@ -26,6 +26,28 @@ export default function GemDetailScreen() {
   const [replyText, setReplyText] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  // Build comment tree — must be before any early return to keep hook count stable
+  const commentList = comments.data?.items ?? [];
+  const topLevel = useMemo(
+    () =>
+      commentList
+        .filter((c) => !c.parentCommentId)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [commentList]
+  );
+  const repliesByParent = useMemo(() => {
+    const map = new Map<string, Comment[]>();
+    for (const c of commentList) {
+      if (c.parentCommentId) {
+        const arr = map.get(c.parentCommentId) ?? [];
+        arr.push(c);
+        map.set(c.parentCommentId, arr);
+      }
+    }
+    return map;
+  }, [commentList]);
+  const canDelete = (c: Comment) => !!user && (user.isAdmin || user.id === c.user._id);
+
   useEffect(() => {
     const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
@@ -113,29 +135,6 @@ export default function GemDetailScreen() {
       },
     ]);
   };
-
-  const commentList = comments.data?.items ?? [];
-  // Top-level first (newest), replies grouped under each parent (oldest first).
-  const topLevel = useMemo(
-    () =>
-      commentList
-        .filter((c) => !c.parentCommentId)
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [commentList]
-  );
-  const repliesByParent = useMemo(() => {
-    const map = new Map<string, Comment[]>();
-    for (const c of commentList) {
-      if (c.parentCommentId) {
-        const arr = map.get(c.parentCommentId) ?? [];
-        arr.push(c);
-        map.set(c.parentCommentId, arr);
-      }
-    }
-    return map;
-  }, [commentList]);
-
-  const canDelete = (c: Comment) => !!user && (user.isAdmin || user.id === c.user._id);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
