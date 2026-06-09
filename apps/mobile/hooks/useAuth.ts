@@ -33,11 +33,9 @@ export function useForgotPassword() {
 }
 
 export function useResetPassword() {
-  const login = useAuthStore((s) => s.login);
   return useMutation({
     mutationFn: authApi.resetPassword,
-    onSuccess: async ({ token, user }) => {
-      await login(token, user);
+    onSuccess: async ({ user }) => {
       logger.event('password_reset_completed', { userId: user.id });
     },
   });

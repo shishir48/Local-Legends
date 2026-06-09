@@ -3,15 +3,13 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Gem } from '../services/api';
 import { categoryEmoji, formatVotes } from '../utils/format';
-import { colors, glass, glow, radius, rf, spacing, text } from '../utils/theme';
+import { colors, glass, radius, rf, spacing, text } from '../utils/theme';
 
 interface Props {
   gem: Gem;
-  /** When true the card gets amber glass + glow + a "top gem" badge (top of feed). */
   highlight?: boolean;
 }
 
-// Soft per-category tint behind the emoji when a gem has no photo.
 const CATEGORY_TINT: Record<string, string> = {
   food: 'rgba(245,158,11,0.16)',
   nature: 'rgba(16,185,129,0.16)',
@@ -25,7 +23,6 @@ function cap(s: string): string {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
-/** Submitter display name, when the gem's submittedBy is populated. */
 function submitterName(submittedBy: Gem['submittedBy']): string {
   return typeof submittedBy === 'object' && submittedBy ? submittedBy.displayName : '';
 }
@@ -38,62 +35,75 @@ export function GemCard({ gem, highlight = false }: Props) {
     <Link href={`/gems/${gem.id}`} asChild>
       <Pressable accessibilityRole="button" accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}>
         <View
-          style={[
-            {
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing.md,
-              padding: spacing.md,
-              borderRadius: radius.lg,
-              marginBottom: spacing.md,
-              backgroundColor: glass.fill,
-              borderWidth: highlight ? 1.5 : 1,
-              borderColor: highlight ? colors.primary : glass.border,
-            },
-            highlight && glow.amber,
-          ]}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.md,
+            padding: highlight ? spacing.lg : spacing.md,
+            borderRadius: radius.lg,
+            marginBottom: spacing.md,
+            backgroundColor: highlight ? 'rgba(30,41,59,0.65)' : glass.fill,
+            borderWidth: 1,
+            borderColor: highlight ? 'rgba(255,255,255,0.12)' : glass.border,
+            ...(highlight && { borderLeftWidth: 2, borderLeftColor: 'rgba(255,255,255,0.3)' }),
+          }}
         >
-          {/* Thumbnail — large, photo-forward; tinted category tile as fallback */}
-          {gem.photoUrl ? (
-            <Image source={{ uri: gem.photoUrl }} style={thumb} />
-          ) : (
-            <View
-              style={[
-                thumb,
-                {
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: CATEGORY_TINT[gem.category] ?? CATEGORY_TINT.other,
-                },
-              ]}
-            >
-              <Text style={{ fontSize: rf(36) }}>{categoryEmoji(gem.category)}</Text>
-            </View>
-          )}
-
-          <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-            {/* Top-gem badge */}
-            {highlight && (
-              <View style={{ flexDirection: 'row' }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
+          {/* Thumbnail */}
+          <View>
+            {gem.photoUrl ? (
+              <Image source={{ uri: gem.photoUrl }} style={highlight ? thumbHighlight : thumb} />
+            ) : (
+              <View
+                style={[
+                  highlight ? thumbHighlight : thumb,
+                  {
                     alignItems: 'center',
-                    backgroundColor: colors.primary,
-                    borderRadius: radius.pill,
-                    paddingHorizontal: spacing.sm,
-                    paddingVertical: 2,
-                  }}
-                >
-                  <Text style={{ fontSize: rf(11) }}>🔥</Text>
-                  <Text style={{ color: colors.bg, fontWeight: '800', fontSize: rf(11), marginLeft: 4, letterSpacing: 0.3 }}>
-                    TOP GEM
-                  </Text>
-                </View>
+                    justifyContent: 'center',
+                    backgroundColor: CATEGORY_TINT[gem.category] ?? CATEGORY_TINT.other,
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: highlight ? rf(40) : rf(36) }}>{categoryEmoji(gem.category)}</Text>
               </View>
             )}
+            {highlight && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 6,
+                  left: 6,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.55)',
+                  borderRadius: radius.pill,
+                  paddingHorizontal: 7,
+                  paddingVertical: 2,
+                }}
+              >
+                <Text style={{ fontSize: rf(10), color: '#FCD34D' }}>★</Text>
+                <Text
+                  style={{
+                    color: 'rgba(255,255,255,0.85)',
+                    fontWeight: '600',
+                    fontSize: rf(10),
+                    marginLeft: 3,
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  Top
+                </Text>
+              </View>
+            )}
+          </View>
 
-            <Text style={[text.body, { fontWeight: '800', fontSize: rf(16) }]} numberOfLines={1}>
+          <View style={{ flex: 1, minWidth: 0, gap: highlight ? 8 : 6 }}>
+            <Text
+              style={[
+                text.body,
+                { fontWeight: '800', fontSize: highlight ? rf(17) : rf(16) },
+              ]}
+              numberOfLines={1}
+            >
               {gem.name}
             </Text>
 
@@ -118,7 +128,7 @@ export function GemCard({ gem, highlight = false }: Props) {
               </View>
             </View>
 
-            {/* Meta: location · added by — one tidy muted line */}
+            {/* Meta */}
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="location-outline" size={rf(12)} color={colors.textMuted} />
               <Text style={[text.muted, { marginLeft: 3, fontSize: rf(12), flexShrink: 1 }]} numberOfLines={1}>
@@ -135,9 +145,9 @@ export function GemCard({ gem, highlight = false }: Props) {
               alignItems: 'center',
               alignSelf: 'stretch',
               justifyContent: 'center',
-              backgroundColor: glass.fillStrong,
+              backgroundColor: highlight ? 'rgba(245,158,11,0.08)' : glass.fillStrong,
               borderWidth: 1,
-              borderColor: glass.border,
+              borderColor: highlight ? 'rgba(245,158,11,0.2)' : glass.border,
               borderRadius: radius.md,
               paddingHorizontal: spacing.xs,
             }}
@@ -160,5 +170,15 @@ const thumb = {
   backgroundColor: colors.surfaceAlt,
   borderWidth: 1,
   borderColor: glass.border,
+  flexShrink: 0,
+} as const;
+
+const thumbHighlight = {
+  width: rf(120),
+  height: rf(120),
+  borderRadius: radius.md,
+  backgroundColor: colors.surfaceAlt,
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.08)',
   flexShrink: 0,
 } as const;

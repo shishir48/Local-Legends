@@ -2,12 +2,13 @@ import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Pressable, Text, KeyboardAvoidingView, Platform, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Field } from '../../components/Field';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { useForgotPassword, useResetPassword } from '../../hooks/useAuth';
+import { useAuthStore } from '../../stores/authStore';
 import { colors, glass, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const EmailSchema = z.object({ email: z.string().email('Enter a valid email') });
@@ -23,6 +24,8 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [phase, setPhase] = useState<'request' | 'reset'>('request');
   const codeBackspacePressed = useRef(false);
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
 
   const forgot = useForgotPassword();
   const reset = useResetPassword();
@@ -45,7 +48,12 @@ export default function ForgotPasswordScreen() {
     });
 
   const onReset = (values: ResetInput) =>
-    reset.mutate({ email, ...values });
+    reset.mutate({ email, ...values }, {
+      onSuccess: async () => {
+        await logout();
+        router.replace('/(auth)/login');
+      },
+    });
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
