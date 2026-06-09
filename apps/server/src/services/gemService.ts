@@ -1,12 +1,12 @@
 import { Types } from 'mongoose';
 import { Gem } from '../models/Gem';
+import { Comment } from '../models/Comment';
 import { ApiError } from '../utils/ApiError';
 import { deleteImage } from '../lib/imageStore';
 import { sendToUser } from '../lib/push';
 
 function withId<T extends { _id: unknown }>(doc: T) {
-  const c = (doc as Record<string, unknown>).commentCount;
-  return { ...doc, id: String(doc._id), commentCount: typeof c === 'number' ? c : 0 };
+  return { ...doc, id: String(doc._id) };
 }
 
 // Vote counts at which a gem's submitter gets a milestone push.
@@ -82,8 +82,20 @@ export async function listGems(opts: ListOptions) {
     Gem.countDocuments(filter),
   ]);
 
+  const gemIds = items.map((g) => g._id);
+  const counts = gemIds.length > 0
+    ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { gem: { $in: gemIds } } },
+        { $group: { _id: '$gem', count: { $sum: 1 } } },
+      ])
+    : [];
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
   return {
-    items: items.map(withId),
+    items: items.map((g) => ({
+      ...withId(g),
+      commentCount: countMap.get(String(g._id)) ?? 0,
+    })),
     page: opts.page,
     limit: opts.limit,
     total,
@@ -111,7 +123,20 @@ export async function findNearby(opts: NearbyOptions) {
     .limit(opts.limit)
     .populate('submittedBy', 'displayName avatarUrl')
     .lean();
-  return items.map(withId);
+
+  const gemIds = items.map((g) => g._id);
+  const counts = gemIds.length > 0
+    ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { gem: { $in: gemIds } } },
+        { $group: { _id: '$gem', count: { $sum: 1 } } },
+      ])
+    : [];
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  return items.map((g) => ({
+    ...withId(g),
+    commentCount: countMap.get(String(g._id)) ?? 0,
+  }));
 }
 
 export async function getGemById(id: string, viewerId?: string) {
@@ -124,7 +149,9 @@ export async function getGemById(id: string, viewerId?: string) {
     viewerId !== undefined &&
     gem.votedBy.some((u) => u.toString() === viewerId);
 
-  return { ...withId(gem), hasVoted };
+  const commentCount = await Comment.countDocuments({ gem: id });
+
+  return { ...withId(gem), commentCount, hasVoted };
 }
 
 interface CreateGemInput {
@@ -261,5 +288,18 @@ export async function listGemsBySubmitter(userId: string) {
   const items = await Gem.find({ submittedBy: userId, isDeleted: false })
     .sort({ createdAt: -1 })
     .lean();
-  return items.map(withId);
+
+  const gemIds = items.map((g) => g._id);
+  const counts = gemIds.length > 0
+    ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { gem: { $in: gemIds } } },
+        { $group: { _id: '$gem', count: { $sum: 1 } } },
+      ])
+    : [];
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  return items.map((g) => ({
+    ...withId(g),
+    commentCount: countMap.get(String(g._id)) ?? 0,
+  }));
 }
