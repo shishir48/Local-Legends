@@ -5,7 +5,8 @@ import { deleteImage } from '../lib/imageStore';
 import { sendToUser } from '../lib/push';
 
 function withId<T extends { _id: unknown }>(doc: T) {
-  return { ...doc, id: String(doc._id) };
+  const c = (doc as Record<string, unknown>).commentCount;
+  return { ...doc, id: String(doc._id), commentCount: typeof c === 'number' ? c : 0 };
 }
 
 // Vote counts at which a gem's submitter gets a milestone push.
@@ -198,7 +199,7 @@ export async function updateGem(
   }
 
   await gem.save();
-  return gem.toJSON();
+  return { ...gem.toJSON(), commentCount: gem.commentCount ?? 0 };
 }
 
 export async function deleteGem(id: string, userId: string, isAdmin = false) {
