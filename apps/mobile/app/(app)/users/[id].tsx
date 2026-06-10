@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,7 +55,6 @@ export default function PublicProfileScreen() {
   }
 
   const { user, items, totalUpvotes, isFollowing } = profile.data;
-  const isOwnProfile = !!currentUser && currentUser.id === id;
 
   const header = (
     <View style={{ paddingVertical: spacing.lg }}>
@@ -79,9 +78,15 @@ export default function PublicProfileScreen() {
         )}
         <View style={{ flex: 1 }}>
           <Text style={text.h2}>{user.displayName}</Text>
-          {!isOwnProfile && currentUser ? (
+          {currentUser ? (
             <Pressable
-              onPress={() => follow.mutate()}
+              onPress={async () => {
+                try {
+                  await follow.mutateAsync();
+                } catch {
+                  Alert.alert('Cannot follow yourself');
+                }
+              }}
               disabled={follow.isPending}
               style={({ pressed }) => ({
                 marginTop: spacing.xs,
