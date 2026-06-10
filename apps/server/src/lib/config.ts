@@ -5,7 +5,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().default(4000),
   MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 chars'),
-  JWT_EXPIRES_IN: z.string().default('30d'),
+  JWT_EXPIRES_IN: z.string().default('60d'),
   GOOGLE_MAPS_API_KEY: z.string().optional(),
   PUBLIC_BASE_URL: z.string().default('http://localhost:4000'),
   RESEND_API_KEY: z.string().optional(),
