@@ -136,7 +136,6 @@ export default function FeedScreen() {
         setCategory(id);
         if (topGems) setTopGems(false);
       }}
-      onChangeCity={() => setShowPicker(true)}
       onOpenFilter={() => setShowFilter(true)}
     />
   );
