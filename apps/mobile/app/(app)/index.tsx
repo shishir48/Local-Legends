@@ -7,8 +7,9 @@ import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { CityPickerModal } from '../../components/CityPickerModal';
+import { FilterSheet } from '../../components/FilterSheet';
 import { AmbientGlow } from '../../components/AmbientGlow';
-import { colors, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
+import { colors, rf, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const CITY_KEY = 'll.city';
 
@@ -19,7 +20,7 @@ function FeedHeader({
   topGems,
   onChange,
   onChangeCity,
-  onToggleTopGems,
+  onOpenFilter,
 }: {
   city: string;
   categories: { id: string; label: string; emoji: string }[];
@@ -27,7 +28,7 @@ function FeedHeader({
   topGems: boolean;
   onChange: (id: string | null) => void;
   onChangeCity: () => void;
-  onToggleTopGems: () => void;
+  onOpenFilter: () => void;
 }) {
   return (
     <View>
@@ -46,26 +47,27 @@ function FeedHeader({
             {topGems ? '🏆 Top-rated across all cities' : `📍 ${city} · Voted by locals, ranked by you.`}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: spacing.sm, paddingTop: spacing.xs }}>
-          <Pressable
-            onPress={onToggleTopGems}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle top gems"
-          >
-            <Text style={{ color: topGems ? colors.primary : colors.text, fontWeight: '600' }}>
-              🏆 Top
-            </Text>
-          </Pressable>
-          {!topGems && (
-            <Pressable
-              onPress={onChangeCity}
-              accessibilityRole="button"
-              accessibilityLabel="Change city"
-            >
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>Change</Text>
-            </Pressable>
-          )}
-        </View>
+        <Pressable
+          onPress={onOpenFilter}
+          accessibilityRole="button"
+          accessibilityLabel="Open filters"
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingVertical: spacing.xs,
+            borderRadius: radius.pill,
+            borderWidth: 1,
+            borderColor: topGems ? colors.primary : colors.border,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs,
+            marginTop: spacing.xs,
+          }}
+        >
+          <Text style={{ fontSize: 14 }}>⚙️</Text>
+          <Text style={{ color: topGems ? colors.primary : colors.text, fontWeight: '600', fontSize: rf(13) }}>
+            Filters
+          </Text>
+        </Pressable>
       </View>
       <CategoryFilter categories={categories} active={active} onChange={onChange} />
     </View>
@@ -88,6 +90,7 @@ export default function FeedScreen() {
   const [city, setCity] = useState<string | null>(null);
   const [cityHydrated, setCityHydrated] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [topGems, setTopGems] = useState(false);
   const gems = useGems({ category, city, top: topGems });
@@ -136,10 +139,7 @@ export default function FeedScreen() {
         if (topGems) setTopGems(false);
       }}
       onChangeCity={() => setShowPicker(true)}
-      onToggleTopGems={() => {
-        setTopGems((prev) => !prev);
-        setCategory(null);
-      }}
+      onOpenFilter={() => setShowFilter(true)}
     />
   );
 
@@ -186,6 +186,16 @@ export default function FeedScreen() {
             tintColor={colors.primary}
           />
         }
+      />
+      <FilterSheet
+        visible={showFilter}
+        topGems={topGems}
+        onToggleTopGems={() => {
+          setTopGems((prev) => !prev);
+          setCategory(null);
+        }}
+        onChangeCity={() => setShowPicker(true)}
+        onClose={() => setShowFilter(false)}
       />
     </SafeAreaView>
   );
