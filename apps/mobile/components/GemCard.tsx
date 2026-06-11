@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { Gem } from '../services/api';
 import { categoryEmoji, formatVotes } from '../utils/format';
-import { colors, glass, radius, rf, shadow, spacing, text } from '../utils/theme';
+import { colors, glass, glow, radius, rf, shadow, spacing, text } from '../utils/theme';
 
 interface Props {
   gem: Gem;
@@ -36,6 +36,10 @@ function submitterName(submittedBy: Gem['submittedBy']): string {
   return typeof submittedBy === 'object' && submittedBy ? submittedBy.displayName : '';
 }
 
+function submitterAvatar(submittedBy: Gem['submittedBy']): string | null {
+  return typeof submittedBy === 'object' && submittedBy ? submittedBy.avatarUrl : null;
+}
+
 export function GemCard({ gem, highlight = false }: Props) {
   const area = gem.city?.trim() || '';
   const addedBy = submitterName(gem.submittedBy);
@@ -43,18 +47,35 @@ export function GemCard({ gem, highlight = false }: Props) {
   if (highlight) {
     return (
       <Link href={`/gems/${gem.id}`} asChild>
-        <Pressable accessibilityRole="button" accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}
+          style={({ pressed }) => ({
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+            opacity: pressed ? 0.92 : 1,
+          })}
+        >
           <View style={{
             backgroundColor: colors.surface,
             borderRadius: radius.lg,
-            marginBottom: spacing.md,
+            marginBottom: spacing.lg,
             borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.06)',
+            borderColor: 'rgba(245,158,11,0.20)',
             ...shadow.card,
+            ...glow.amber,
             overflow: 'hidden',
           }}>
-            {/* Gold top accent */}
-            <View style={{ height: 2, backgroundColor: colors.primary, width: '40%' }} />
+            {/* Amber glow accent bar */}
+            <View style={{
+              height: 3,
+              backgroundColor: colors.primary,
+              width: '100%',
+              shadowColor: '#F59E0B',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.6,
+              shadowRadius: 6,
+              elevation: 3,
+            }} />
 
             <View style={{
               flexDirection: 'row',
@@ -83,27 +104,29 @@ export function GemCard({ gem, highlight = false }: Props) {
                     <Text style={{ fontSize: rf(36) }}>{categoryEmoji(gem.category)}</Text>
                   </View>
                 )}
-                {/* ★ Top badge */}
+                {/* 🏆 Top badge with glow */}
                 <View style={{
                   position: 'absolute',
                   top: -4,
                   left: -4,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: 'rgba(15,23,42,0.85)',
+                  backgroundColor: 'rgba(245,158,11,0.15)',
                   borderRadius: radius.pill,
-                  paddingHorizontal: 7,
-                  paddingVertical: 3,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
                   borderWidth: 1,
-                  borderColor: 'rgba(245,158,11,0.4)',
+                  borderColor: 'rgba(245,158,11,0.50)',
+                  ...glow.amber,
                 }}>
-                  <Text style={{ fontSize: rf(9), color: '#FCD34D' }}>★</Text>
+                  <Text style={{ fontSize: rf(10), color: '#FCD34D' }}>🏆</Text>
                   <Text style={{
-                    color: 'rgba(255,255,255,0.9)',
-                    fontWeight: '700',
+                    color: '#FCD34D',
+                    fontWeight: '800',
                     fontSize: rf(9),
-                    marginLeft: 3,
-                    letterSpacing: 0.6,
+                    marginLeft: 4,
+                    letterSpacing: 0.8,
+                    textTransform: 'uppercase',
                   }}>TOP</Text>
                 </View>
               </View>
@@ -112,10 +135,10 @@ export function GemCard({ gem, highlight = false }: Props) {
               <View style={{ flex: 1, minWidth: 0, justifyContent: 'space-between' }}>
                 <Text style={{
                   color: colors.text,
-                  fontWeight: '700',
-                  fontSize: rf(17),
-                  letterSpacing: 0.2,
-                }} numberOfLines={1}>
+                  fontWeight: '800',
+                  fontSize: rf(18),
+                  letterSpacing: -0.3,
+                }} numberOfLines={2}>
                   {gem.name}
                 </Text>
 
@@ -124,13 +147,15 @@ export function GemCard({ gem, highlight = false }: Props) {
                   <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    backgroundColor: 'rgba(245,158,11,0.10)',
                     borderRadius: radius.pill,
                     paddingHorizontal: 8,
                     paddingVertical: 3,
+                    borderWidth: 1,
+                    borderColor: 'rgba(245,158,11,0.15)',
                   }}>
                     <Text style={{ fontSize: rf(11) }}>{categoryEmoji(gem.category)}</Text>
-                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontWeight: '600', fontSize: rf(11), marginLeft: 4 }}>
+                    <Text style={{ color: colors.primarySoft, fontWeight: '700', fontSize: rf(11), marginLeft: 4 }}>
                       {cap(gem.category)}
                     </Text>
                   </View>
@@ -144,7 +169,7 @@ export function GemCard({ gem, highlight = false }: Props) {
                   </Text>
                 </View>
 
-                {/* Vote row */}
+                {/* Vote + comments row */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 }}>
                   <View style={{
                     backgroundColor: 'rgba(245,158,11,0.12)',
@@ -154,11 +179,13 @@ export function GemCard({ gem, highlight = false }: Props) {
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: 4,
+                    borderWidth: 1,
+                    borderColor: 'rgba(245,158,11,0.20)',
                   }}>
                     <Ionicons name="arrow-up" size={rf(13)} color={colors.primary} />
                     <Text style={{
                       color: colors.primarySoft,
-                      fontWeight: '700',
+                      fontWeight: '800',
                       fontSize: rf(14),
                       letterSpacing: 0.2,
                     }}>
@@ -190,7 +217,13 @@ export function GemCard({ gem, highlight = false }: Props) {
 
   return (
     <Link href={`/gems/${gem.id}`} asChild>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${gem.name}, ${gem.voteCount} votes`}
+        style={({ pressed }) => ({
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        })}
+      >
         <View
           style={{
             flexDirection: 'row',
