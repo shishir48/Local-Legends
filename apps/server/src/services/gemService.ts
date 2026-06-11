@@ -66,7 +66,7 @@ interface ListOptions {
 export async function listGems(opts: ListOptions) {
   const filter: Record<string, unknown> = { isDeleted: false };
   if (opts.category) filter.category = opts.category;
-  if (opts.city) filter.city = { $regex: new RegExp(`^${opts.city}$`, 'i') };
+  if (opts.city) filter.city = opts.city.toLowerCase();
 
   const sortSpec: Record<string, 1 | -1> =
     opts.sort === 'recent' ? { createdAt: -1 } : { voteCount: -1 };

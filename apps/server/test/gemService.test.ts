@@ -80,7 +80,7 @@ describe('gemService.updateGem', () => {
       mapsUrl: 'https://maps.example/b',
     });
 
-    expect(updated.city).toBe('Mumbai');
+    expect(updated.city).toBe('mumbai');
     expect(updated.mapsUrl).toBe('https://maps.example/b');
   });
 

@@ -52,7 +52,7 @@ describe('gems full lifecycle (e2e)', () => {
       .send({ name: 'Renamed Spot', city: 'Mumbai' })
       .expect(200);
     expect(updated.body.name).toBe('Renamed Spot');
-    expect(updated.body.city).toBe('Mumbai');
+    expect(updated.body.city).toBe('mumbai');
 
     // delete by owner
     await request(app).delete(`/api/gems/${gem.id}`).set(auth(owner.token)).expect(204);

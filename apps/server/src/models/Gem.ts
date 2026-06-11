@@ -13,7 +13,7 @@ const GemSchema = new Schema(
     },
     description: { type: String, required: true, maxlength: 500, trim: true },
     address: { type: String, required: true, trim: true },
-    city: { type: String, trim: true, default: '', index: true },
+    city: { type: String, trim: true, lowercase: true, default: '', index: true },
     location: {
       type: {
         type: String,
