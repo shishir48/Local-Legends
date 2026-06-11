@@ -9,7 +9,7 @@ import { CategoryFilter } from '../../components/CategoryFilter';
 import { CityPickerModal } from '../../components/CityPickerModal';
 import { FilterSheet } from '../../components/FilterSheet';
 import { AmbientGlow } from '../../components/AmbientGlow';
-import { colors, rf, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
+import { colors, rf, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const CITY_KEY = 'll.city';
 
