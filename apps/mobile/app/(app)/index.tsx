@@ -19,7 +19,6 @@ function FeedHeader({
   active,
   topGems,
   onChange,
-  onChangeCity,
   onOpenFilter,
 }: {
   city: string;
@@ -27,7 +26,6 @@ function FeedHeader({
   active: string | null;
   topGems: boolean;
   onChange: (id: string | null) => void;
-  onChangeCity: () => void;
   onOpenFilter: () => void;
 }) {
   return (
