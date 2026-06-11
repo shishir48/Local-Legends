@@ -53,18 +53,18 @@ function FeedHeader({
           accessibilityLabel="Open filters"
           style={{
             paddingHorizontal: spacing.md,
-            paddingVertical: spacing.xs,
+            paddingVertical: spacing.sm,
             borderRadius: radius.pill,
+            backgroundColor: topGems ? colors.primary : colors.surface,
             borderWidth: 1,
             borderColor: topGems ? colors.primary : colors.border,
             flexDirection: 'row',
             alignItems: 'center',
-            gap: spacing.xs,
             marginTop: spacing.xs,
           }}
         >
-          <Text style={{ fontSize: 14 }}>⚙️</Text>
-          <Text style={{ color: topGems ? colors.primary : colors.text, fontWeight: '600', fontSize: rf(13) }}>
+          <Text style={{ fontSize: 13 }}>⚙️</Text>
+          <Text style={{ marginLeft: spacing.xs, color: topGems ? colors.bg : colors.text, fontWeight: '600', fontSize: rf(13) }}>
             Filters
           </Text>
         </Pressable>
