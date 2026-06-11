@@ -16,14 +16,18 @@ function FeedHeader({
   city,
   categories,
   active,
+  topGems,
   onChange,
   onChangeCity,
+  onToggleTopGems,
 }: {
   city: string;
   categories: { id: string; label: string; emoji: string }[];
   active: string | null;
+  topGems: boolean;
   onChange: (id: string | null) => void;
   onChangeCity: () => void;
+  onToggleTopGems: () => void;
 }) {
   return (
     <View>
@@ -39,30 +43,42 @@ function FeedHeader({
         <View style={{ flex: 1 }}>
           <Text style={text.h1}>Hidden gems</Text>
           <Text style={[text.muted, { marginBottom: spacing.sm }]}>
-            📍 {city} · Voted by locals, ranked by you.
+            {topGems ? '🏆 Top-rated across all cities' : `📍 ${city} · Voted by locals, ranked by you.`}
           </Text>
         </View>
-        <Pressable
-          onPress={onChangeCity}
-          accessibilityRole="button"
-          accessibilityLabel="Change city"
-          style={{ paddingTop: spacing.xs }}
-        >
-          <Text style={{ color: colors.primary, fontWeight: '600' }}>Change</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: spacing.sm, paddingTop: spacing.xs }}>
+          <Pressable
+            onPress={onToggleTopGems}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle top gems"
+          >
+            <Text style={{ color: topGems ? colors.primary : colors.text, fontWeight: '600' }}>
+              🏆 Top
+            </Text>
+          </Pressable>
+          {!topGems && (
+            <Pressable
+              onPress={onChangeCity}
+              accessibilityRole="button"
+              accessibilityLabel="Change city"
+            >
+              <Text style={{ color: colors.primary, fontWeight: '600' }}>Change</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
       <CategoryFilter categories={categories} active={active} onChange={onChange} />
     </View>
   );
 }
 
-function EmptyFeed() {
+function EmptyFeed({ isTopGems }: { isTopGems?: boolean }) {
   return (
     <View style={{ alignItems: 'center', padding: spacing.xxl }}>
       <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
       <Text style={text.h2}>No gems yet</Text>
       <Text style={[text.muted, { marginTop: spacing.xs, textAlign: 'center' }]}>
-        Be the first to submit one in this city.
+        {isTopGems ? 'No gems have been submitted yet.' : 'Be the first to submit one in this city.'}
       </Text>
     </View>
   );
@@ -73,7 +89,8 @@ export default function FeedScreen() {
   const [cityHydrated, setCityHydrated] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
-  const gems = useGems({ category, city });
+  const [topGems, setTopGems] = useState(false);
+  const gems = useGems({ category, city, top: topGems });
   const categories = useCategories();
   const cats = categories.data?.items ?? [];
 
@@ -87,6 +104,7 @@ export default function FeedScreen() {
   const selectCity = async (chosen: string) => {
     await SecureStore.setItemAsync(CITY_KEY, chosen);
     setCity(chosen);
+    setTopGems(false);
     setShowPicker(false);
   };
 
@@ -111,9 +129,17 @@ export default function FeedScreen() {
     <FeedHeader
       city={city}
       categories={cats}
-      active={category}
-      onChange={setCategory}
+      active={topGems ? null : category}
+      topGems={topGems}
+      onChange={(id) => {
+        setCategory(id);
+        if (topGems) setTopGems(false);
+      }}
       onChangeCity={() => setShowPicker(true)}
+      onToggleTopGems={() => {
+        setTopGems((prev) => !prev);
+        setCategory(null);
+      }}
     />
   );
 
@@ -148,7 +174,7 @@ export default function FeedScreen() {
               <Text style={[text.muted, { marginTop: spacing.xs }]}>Pull down to retry.</Text>
             </View>
           ) : (
-            <EmptyFeed />
+            <EmptyFeed isTopGems={topGems} />
           )
         }
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}

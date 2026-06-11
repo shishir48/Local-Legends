@@ -61,10 +61,41 @@ interface ListOptions {
   sort: 'votes' | 'recent';
   page: number;
   limit: number;
+  top?: boolean;
 }
 
 export async function listGems(opts: ListOptions) {
   const filter: Record<string, unknown> = { isDeleted: false };
+
+  if (opts.top) {
+    // Top gems across all cities — ignore city filter, top 5 by votes
+    const items = await Gem.find(filter)
+      .sort({ voteCount: -1 })
+      .limit(5)
+      .populate('submittedBy', 'displayName avatarUrl')
+      .lean();
+
+    const gemIds = items.map((g) => g._id);
+    const counts = gemIds.length > 0
+      ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+          { $match: { gem: { $in: gemIds } } },
+          { $group: { _id: '$gem', count: { $sum: 1 } } },
+        ])
+      : [];
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    return {
+      items: items.map((g) => ({
+        ...withId(g),
+        commentCount: countMap.get(String(g._id)) ?? 0,
+      })),
+      page: 1,
+      limit: 5,
+      total: items.length,
+      pages: 1,
+    };
+  }
+
   if (opts.category) filter.category = opts.category;
   if (opts.city) filter.city = opts.city.toLowerCase();
 

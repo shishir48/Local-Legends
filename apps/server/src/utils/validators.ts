@@ -38,6 +38,7 @@ export const ListGemsQuerySchema = z.object({
   sort: z.enum(['votes', 'recent']).default('votes'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  top: z.coerce.boolean().optional(),
 });
 
 export const NearbyQuerySchema = z.object({

@@ -98,7 +98,7 @@ export const authApi = {
 };
 
 export const gemsApi = {
-  list: (params?: { category?: string; city?: string; sort?: 'votes' | 'recent'; page?: number; limit?: number }) =>
+  list: (params?: { category?: string; city?: string; sort?: 'votes' | 'recent'; page?: number; limit?: number; top?: boolean }) =>
     api.get<PaginatedGems>('/api/gems', { params }).then((r) => r.data),
   nearby: (params: { lat: number; lng: number; radius?: number; limit?: number }) =>
     api.get<{ items: Gem[] }>('/api/gems/nearby', { params }).then((r) => r.data),
