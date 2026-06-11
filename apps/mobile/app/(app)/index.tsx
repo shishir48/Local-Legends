@@ -146,7 +146,7 @@ export default function FeedScreen() {
         <AmbientGlow />
         {header}
         <View style={{ paddingHorizontal: spacing.lg }}>
-          <GemCardSkeleton highlight />
+          <GemCardSkeleton />
           <GemCardSkeleton />
           <GemCardSkeleton />
         </View>
