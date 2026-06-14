@@ -165,7 +165,7 @@ export default function FeedScreen() {
       <FlatList
         data={items}
         keyExtractor={(g) => g.id}
-        renderItem={({ item, index }) => <GemCard gem={item} highlight={index === 0} />}
+        renderItem={({ item, index }) => <GemCard gem={item} highlight={!topGems && index === 0} showTopBadge={topGems} />}
         ListHeaderComponent={header}
 ListEmptyComponent={
           data.isError ? (

@@ -8,6 +8,7 @@ import { colors, glass, glow, radius, rf, shadow, spacing, text } from '../utils
 interface Props {
   gem: Gem;
   highlight?: boolean;
+  showTopBadge?: boolean;
 }
 
 const CATEGORY_TINT: Record<string, string> = {
@@ -40,7 +41,7 @@ function submitterAvatar(submittedBy: Gem['submittedBy']): string | null {
   return typeof submittedBy === 'object' && submittedBy ? submittedBy.avatarUrl : null;
 }
 
-export function GemCard({ gem, highlight = false }: Props) {
+export function GemCard({ gem, highlight = false, showTopBadge = false }: Props) {
   const area = gem.city?.trim() || '';
   const addedBy = submitterName(gem.submittedBy);
 
@@ -251,6 +252,21 @@ export function GemCard({ gem, highlight = false }: Props) {
               ]}
             >
               <Text style={{ fontSize: rf(36) }}>{categoryEmoji(gem.category)}</Text>
+            </View>
+          )}
+          {showTopBadge && (
+            <View style={{
+              position: 'absolute',
+              top: -2,
+              left: -2,
+              backgroundColor: 'rgba(245,158,11,0.12)',
+              borderRadius: radius.pill,
+              paddingHorizontal: 6,
+              paddingVertical: 2,
+              borderWidth: 1,
+              borderColor: 'rgba(245,158,11,0.30)',
+            }}>
+              <Text style={{ fontSize: rf(9), color: '#FCD34D', fontWeight: '700' }}>🏆</Text>
             </View>
           )}
 
