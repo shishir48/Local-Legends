@@ -185,15 +185,6 @@ ListEmptyComponent={
             tintColor={colors.primary}
           />
         }
-        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={gems.isFetching && !gems.isLoading}
-            onRefresh={gems.refetch}
-            tintColor={colors.primary}
-          />
-        }
       />
       <FilterSheet
         visible={showFilter}
