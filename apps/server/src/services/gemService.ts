@@ -193,6 +193,7 @@ interface CreateGemInput {
   address: string;
   city: string;
   mapsUrl?: string | null;
+  placeId?: string | null;
   lat: number;
   lng: number;
   photoUrl?: string | null;
@@ -201,6 +202,14 @@ interface CreateGemInput {
 }
 
 export async function createGem(input: CreateGemInput) {
+  // Reject duplicate — same place submitted again
+  if (input.placeId) {
+    const existing = await Gem.findOne({ placeId: input.placeId, isDeleted: false }).select('_id');
+    if (existing) {
+      throw ApiError.conflict('This place has already been submitted as a gem');
+    }
+  }
+
   const gem = await Gem.create({
     name: input.name,
     category: input.category,
@@ -208,6 +217,7 @@ export async function createGem(input: CreateGemInput) {
     address: input.address,
     city: input.city,
     mapsUrl: input.mapsUrl ?? null,
+    placeId: input.placeId ?? null,
     location: { type: 'Point', coordinates: [input.lng, input.lat] },
     photoUrl: input.photoUrl ?? null,
     photoPublicId: input.photoPublicId ?? null,

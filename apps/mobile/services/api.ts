@@ -180,6 +180,7 @@ export interface PlaceDetail {
   lng: number;
   mapsUrl: string;
   photoName?: string;
+  placeId?: string;
 }
 
 export interface PlacePrediction {

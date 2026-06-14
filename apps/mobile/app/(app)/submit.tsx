@@ -93,6 +93,7 @@ export default function SubmitScreen() {
       form.append('mapsUrl', place.mapsUrl);
       form.append('lat', String(place.lat));
       form.append('lng', String(place.lng));
+      if (place.placeId) form.append('placeId', place.placeId);
       if (photo) {
         form.append('photo', {
           uri: photo.uri,

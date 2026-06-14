@@ -11,6 +11,7 @@ export interface PlaceResult {
   lng: number;
   mapsUrl: string;
   photoName?: string;
+  placeId?: string;
 }
 
 interface Props {

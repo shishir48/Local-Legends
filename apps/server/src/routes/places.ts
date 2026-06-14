@@ -94,6 +94,7 @@ interface PlaceDetail {
   lng: number;
   mapsUrl: string;
   photoName?: string;
+  placeId?: string;
 }
 
 interface Prediction {
@@ -247,6 +248,7 @@ async function nominatimAutocomplete(input: string, city?: string): Promise<Pred
         lat: parseFloat(r.lat),
         lng: parseFloat(r.lon),
         mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.display_name)}`,
+        placeId: String(r.osm_id),
       },
     };
   });
@@ -327,6 +329,7 @@ async function googlePlaceDetails(
     lng: d.location?.longitude ?? 0,
     mapsUrl: d.googleMapsUri ?? '',
     photoName: d.photos?.[0]?.name,
+    placeId,
   };
 }
 
