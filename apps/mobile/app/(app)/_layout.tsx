@@ -25,6 +25,7 @@ function PlusIcon() {
 export default function AppTabsLayout() {
   return (
     <Tabs
+      lazy={false}
       screenOptions={{
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
