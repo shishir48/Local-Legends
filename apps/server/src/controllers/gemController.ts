@@ -55,16 +55,6 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       const asset = saveBuffer(req.file.buffer);
       photoUrl = asset.url;
       photoPublicId = asset.publicId;
-    } else if (input.googlePhotoName) {
-      // No uploaded photo — pull the place's Google photo and store it.
-      const uri = await googlePhotoUri(input.googlePhotoName);
-      if (uri) {
-        const asset = await saveFromUrl(uri);
-        if (asset) {
-          photoUrl = asset.url;
-          photoPublicId = asset.publicId;
-        }
-      }
     }
 
     const gem = await gemService.createGem({
@@ -74,6 +64,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       submittedBy: req.user!._id,
     });
     res.status(201).json(gem.toJSON());
+
+    // Fire-and-forget: resolve Google photo and update gem later if no user photo
+    if (!req.file && input.googlePhotoName) {
+      googlePhotoUri(input.googlePhotoName).then((uri) => {
+        if (!uri) return;
+        saveFromUrl(uri).then((asset) => {
+          if (!asset) return;
+          gemService.updateGem(gem._id.toString(), req.user!.id, {
+            photoUrl: asset.url,
+            photoPublicId: asset.publicId,
+          }).catch(() => {});
+        });
+      });
+    }
   } catch (err) {
     next(err);
   }
