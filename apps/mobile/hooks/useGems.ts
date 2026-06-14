@@ -10,7 +10,7 @@ export function useGems(opts: { category?: string | null; city?: string | null; 
         category: opts.category ?? undefined,
         city: opts.city ?? undefined,
         sort: opts.sort ?? 'votes',
-        top: opts.top ?? undefined,
+        ...(opts.top ? { top: true } : {}),
       }),
   });
 }
