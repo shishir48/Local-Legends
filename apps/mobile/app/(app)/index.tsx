@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
-import { useGems, useCategories } from '../../hooks/useGems';
+import { useGems, useTopGems, useCategories } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
@@ -91,9 +91,12 @@ export default function FeedScreen() {
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [topGems, setTopGems] = useState(false);
-  const gems = useGems({ category, city, top: topGems });
+  const gems = useGems({ category, city });
+  const topGemsQuery = useTopGems();
   const categories = useCategories();
   const cats = categories.data?.items ?? [];
+
+  const data = topGems ? topGemsQuery : gems;
 
   useEffect(() => {
     SecureStore.getItemAsync(CITY_KEY).then((stored) => {
@@ -140,7 +143,7 @@ export default function FeedScreen() {
     />
   );
 
-  if (gems.isLoading) {
+  if (data.isLoading) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
         <AmbientGlow />
@@ -154,7 +157,7 @@ export default function FeedScreen() {
     );
   }
 
-  const items = gems.data?.items ?? [];
+  const items = data.data?.items ?? [];
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -164,8 +167,8 @@ export default function FeedScreen() {
         keyExtractor={(g) => g.id}
         renderItem={({ item, index }) => <GemCard gem={item} highlight={index === 0} />}
         ListHeaderComponent={header}
-        ListEmptyComponent={
-          gems.isError ? (
+ListEmptyComponent={
+          data.isError ? (
             <View style={{ alignItems: 'center', padding: spacing.xl }}>
               <Text style={text.body}>Couldn't load gems.</Text>
               <Text style={[text.muted, { marginTop: spacing.xs }]}>Pull down to retry.</Text>
@@ -173,6 +176,14 @@ export default function FeedScreen() {
           ) : (
             <EmptyFeed isTopGems={topGems} />
           )
+        }
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={data.isFetching && !data.isLoading}
+            onRefresh={data.refetch}
+            tintColor={colors.primary}
+          />
         }
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
         showsVerticalScrollIndicator={false}

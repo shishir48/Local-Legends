@@ -1,17 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gemsApi, categoriesApi, usersApi, commentsApi } from '../services/api';
 
-export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent'; top?: boolean } = {}) {
+export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent' } = {}) {
   return useQuery({
-    enabled: opts.top ? true : !!opts.city,
-    queryKey: ['gems', { category: opts.category ?? null, city: opts.city ?? null, sort: opts.sort ?? 'votes', top: opts.top ?? false }],
+    enabled: !!opts.city,
+    queryKey: ['gems', { category: opts.category ?? null, city: opts.city ?? null, sort: opts.sort ?? 'votes' }],
     queryFn: () =>
       gemsApi.list({
         category: opts.category ?? undefined,
         city: opts.city ?? undefined,
         sort: opts.sort ?? 'votes',
-        ...(opts.top ? { top: true } : {}),
       }),
+  });
+}
+
+export function useTopGems() {
+  return useQuery({
+    queryKey: ['top-gems'],
+    queryFn: () => gemsApi.list({ top: true }),
+    staleTime: 30 * 1000,
   });
 }
 
