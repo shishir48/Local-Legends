@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AxiosError } from 'axios';
+import type { AxiosResponse } from 'axios';
 import { Field } from '../../components/Field';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { useRegister } from '../../hooks/useAuth';
@@ -71,9 +72,19 @@ export default function RegisterScreen() {
 
         {register.isError ? (
           <Text style={[text.muted, { color: colors.danger, marginBottom: spacing.md }]}>
-            {(register.error as AxiosError)?.response?.status === 409
-              ? 'That email is already registered.'
-              : 'Something went wrong. Please try again.'}
+            {(() => {
+              const err = register.error as AxiosError<{ error?: string; details?: unknown }>;
+              const status = err?.response?.status;
+              if (status === 409) return 'That email is already registered.';
+              if (status === 429) return 'Too many attempts. Please wait a moment.';
+              if (status === 400) {
+                const body = err.response?.data;
+                if (body?.details) return `Validation error`;
+                if (body?.error) return body.error;
+              }
+              if (!err?.response) return 'Network error. Check your connection.';
+              return err?.response?.data?.error ?? 'Something went wrong. Please try again.';
+            })()}
           </Text>
         ) : null}
 

@@ -5,10 +5,13 @@ import { Link } from 'expo-router';
 import { Pressable, Text, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import type { AxiosError } from 'axios';
 import { Field } from '../../components/Field';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import { useLogin } from '../../hooks/useAuth';
 import { colors, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
+
+const DEMO_CREDENTIALS = { email: 'maya@example.com', password: 'password123' };
 
 const LoginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -18,7 +21,7 @@ const LoginSchema = z.object({
 type LoginInput = z.infer<typeof LoginSchema>;
 
 export default function LoginScreen() {
-  const { control, handleSubmit, formState: { errors } } = useForm<LoginInput>({
+  const { control, handleSubmit, formState: { errors }, setValue } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
     defaultValues: { email: '', password: '' },
   });
@@ -61,7 +64,13 @@ export default function LoginScreen() {
 
         {login.isError ? (
           <Text style={[text.muted, { color: colors.danger, marginBottom: spacing.md }]}>
-            Invalid credentials
+            {(() => {
+              const err = login.error as AxiosError<{ error?: string }>;
+              const status = err?.response?.status;
+              if (status === 429) return 'Too many attempts. Please wait.';
+              if (!err?.response) return 'Network error. Check your connection.';
+              return err.response?.data?.error ?? 'Invalid credentials';
+            })()}
           </Text>
         ) : null}
 
@@ -77,6 +86,27 @@ export default function LoginScreen() {
           })}
         >
           <Text style={text.cta}>{login.isPending ? 'Signing in…' : 'Sign in'}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            setValue('email', DEMO_CREDENTIALS.email);
+            setValue('password', DEMO_CREDENTIALS.password);
+          }}
+          style={({ pressed }) => ({
+            marginTop: spacing.md,
+            padding: spacing.sm,
+            borderRadius: radius.md,
+            alignItems: 'center',
+            opacity: pressed ? 0.7 : 1,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderStyle: 'dashed',
+          })}
+        >
+          <Text style={[text.muted, { fontSize: 13 }]}>
+            Demo: {DEMO_CREDENTIALS.email} / {DEMO_CREDENTIALS.password}
+          </Text>
         </Pressable>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg }}>
