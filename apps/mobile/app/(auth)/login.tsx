@@ -11,8 +11,6 @@ import { AmbientGlow } from '../../components/AmbientGlow';
 import { useLogin } from '../../hooks/useAuth';
 import { colors, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
-const DEMO_CREDENTIALS = { email: 'maya@example.com', password: 'password123' };
-
 const LoginSchema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
@@ -21,7 +19,7 @@ const LoginSchema = z.object({
 type LoginInput = z.infer<typeof LoginSchema>;
 
 export default function LoginScreen() {
-  const { control, handleSubmit, formState: { errors }, setValue } = useForm<LoginInput>({
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
     defaultValues: { email: '', password: '' },
   });
@@ -86,27 +84,6 @@ export default function LoginScreen() {
           })}
         >
           <Text style={text.cta}>{login.isPending ? 'Signing in…' : 'Sign in'}</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => {
-            setValue('email', DEMO_CREDENTIALS.email);
-            setValue('password', DEMO_CREDENTIALS.password);
-          }}
-          style={({ pressed }) => ({
-            marginTop: spacing.md,
-            padding: spacing.sm,
-            borderRadius: radius.md,
-            alignItems: 'center',
-            opacity: pressed ? 0.7 : 1,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderStyle: 'dashed',
-          })}
-        >
-          <Text style={[text.muted, { fontSize: 13 }]}>
-            Demo: {DEMO_CREDENTIALS.email} / {DEMO_CREDENTIALS.password}
-          </Text>
         </Pressable>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg }}>
