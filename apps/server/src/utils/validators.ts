@@ -14,7 +14,7 @@ export const CreateGemSchema = z.object({
   address: z.string().min(1).max(200).trim(),
   city: z.string().trim().min(1).max(100),
   mapsUrl: z.string().url().optional(),
-  placeId: z.string().optional(),
+  placeId: z.string().trim().min(1).optional(),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   // Google Places photo resource name ("places/<id>/photos/<ref>"). When the

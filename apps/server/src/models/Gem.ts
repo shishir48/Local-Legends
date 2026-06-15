@@ -34,7 +34,7 @@ const GemSchema = new Schema(
       },
     },
     mapsUrl: { type: String, default: null },
-    placeId: { type: String, default: null },
+    placeId: { type: String },
     photoUrl: { type: String, default: null },
     photoPublicId: { type: String, default: null }, // stored image id, used to delete
     submittedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -52,7 +52,10 @@ const GemSchema = new Schema(
 GemSchema.index({ location: '2dsphere' });   // enables nearby/$near queries
 GemSchema.index({ voteCount: -1 });           // fast leaderboard sort (desc)
 GemSchema.index({ category: 1, voteCount: -1 }); // filter + sort combo
-GemSchema.index({ placeId: 1 }, { sparse: true, unique: true }); // no duplicate places
+GemSchema.index(
+  { placeId: 1 },
+  { unique: true, partialFilterExpression: { placeId: { $type: 'string' } } }
+); // no duplicate places
 
 GemSchema.set('toJSON', {
   virtuals: true,

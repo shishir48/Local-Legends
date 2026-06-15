@@ -217,7 +217,7 @@ export async function createGem(input: CreateGemInput) {
     address: input.address,
     city: input.city,
     mapsUrl: input.mapsUrl ?? null,
-    placeId: input.placeId ?? null,
+    ...(input.placeId ? { placeId: input.placeId } : {}),
     location: { type: 'Point', coordinates: [input.lng, input.lat] },
     photoUrl: input.photoUrl ?? null,
     photoPublicId: input.photoPublicId ?? null,

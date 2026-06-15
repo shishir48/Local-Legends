@@ -229,6 +229,7 @@ describe('GET /api/places/details', () => {
       lng: 80.92,
       mapsUrl: 'https://maps.google.com/?cid=123',
       photoName: 'places/PLACE_123/photos/PHOTO_REF',
+      placeId: 'PLACE_123',
     });
 
     const det = calls().find((c) => c.url.includes('/v1/places/PLACE_123'))!;
