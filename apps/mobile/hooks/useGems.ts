@@ -51,6 +51,7 @@ export function useUserGems(userId: string | undefined) {
     enabled: !!userId,
     queryKey: ['user-gems', userId],
     queryFn: () => usersApi.gemsBySubmitter(userId!),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

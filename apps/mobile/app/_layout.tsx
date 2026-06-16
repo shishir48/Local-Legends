@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { queryClient } from '../services/queryClient';
+import { usersApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import { registerForPush } from '../lib/push';
 import { colors } from '../utils/theme';
@@ -24,6 +25,7 @@ function routeFromNotification(
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const hydrate = useAuthStore((s) => s.hydrate);
   const segments = useSegments();
@@ -47,6 +49,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isHydrated && token) registerForPush(false);
   }, [isHydrated, token]);
+
+  // Warm the Profile tab data after login so switching tabs does not wait on
+  // the profile request in the middle of the navigation gesture.
+  useEffect(() => {
+    if (!isHydrated || !token || !user?.id) return;
+    queryClient.prefetchQuery({
+      queryKey: ['user-gems', user.id],
+      queryFn: () => usersApi.gemsBySubmitter(user.id),
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [isHydrated, token, user?.id]);
 
   // Deep-link from a tapped notification (cold start + while running).
   useEffect(() => {

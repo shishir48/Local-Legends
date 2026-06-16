@@ -114,6 +114,11 @@ export default function ProfileScreen() {
         data={items}
         keyExtractor={(g) => g.id}
         renderItem={({ item }) => <GemCard gem={item} />}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        updateCellsBatchingPeriod={50}
+        windowSize={5}
+        removeClippedSubviews
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         ListEmptyComponent={
