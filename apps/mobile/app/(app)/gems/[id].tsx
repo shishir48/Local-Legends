@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Keyboard, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Linking, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,13 @@ import { VoteButton } from '../../../components/VoteButton';
 import { AmbientGlow } from '../../../components/AmbientGlow';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
 import { colors, glass, radius, spacing, text } from '../../../utils/theme';
+
+type CommentRowItem = {
+  id: string;
+  comment: Comment;
+  depth: 0 | 1;
+  isReply: boolean;
+};
 
 export default function GemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,6 +53,17 @@ export default function GemDetailScreen() {
     }
     return map;
   }, [commentList]);
+  const commentRows = useMemo<CommentRowItem[]>(() => {
+    const rows: CommentRowItem[] = [];
+    for (const c of topLevel) {
+      rows.push({ id: c.id, comment: c, depth: 0, isReply: false });
+      const replies = repliesByParent.get(c.id) ?? [];
+      for (const r of replies) {
+        rows.push({ id: r.id, comment: r, depth: 1, isReply: true });
+      }
+    }
+    return rows;
+  }, [topLevel, repliesByParent]);
   const canDelete = (c: Comment) => !!user && (user.isAdmin || user.id === c.user._id);
 
   useEffect(() => {
@@ -136,15 +154,176 @@ export default function GemDetailScreen() {
     ]);
   };
 
+  const renderGemContent = () => (
+    <View style={{ padding: spacing.lg }}>
+      <Text style={text.h1}>{g.name}</Text>
+      <Text style={[text.muted, { marginTop: spacing.xs }]}>
+        {categoryEmoji(g.category)} {g.category} · {formatTimeAgo(g.createdAt)}
+      </Text>
+
+      <Text style={[text.body, { marginTop: spacing.lg, lineHeight: 22 }]}>{g.description}</Text>
+
+      <View style={{ marginTop: spacing.lg, padding: spacing.md, backgroundColor: glass.fill, borderWidth: 1, borderColor: glass.border, borderRadius: radius.lg }}>
+        <Text style={text.muted}>Address</Text>
+        <Text style={[text.body, { marginTop: spacing.xs }]}>{g.address}</Text>
+      </View>
+
+      <Pressable
+        onPress={() => {
+          const url = g.mapsUrl
+            ?? `https://www.google.com/maps/place/${encodeURIComponent(g.name)}/@${lat},${lng},17z`;
+          Linking.openURL(url);
+        }}
+        style={({ pressed }) => ({
+          marginTop: spacing.lg,
+          padding: spacing.md,
+          backgroundColor: pressed ? glass.fillStrong : glass.fill,
+          borderWidth: 1,
+          borderColor: glass.amberBorder,
+          borderRadius: radius.lg,
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'center',
+        })}
+      >
+        <Ionicons name="map-outline" size={18} color={colors.primary} style={{ marginRight: spacing.sm }} />
+        <Text style={[text.body, { color: colors.primary, fontWeight: '600' }]}>Open in Google Maps</Text>
+      </Pressable>
+
+      {submitter ? (
+        <Pressable
+          onPress={() => router.push(`/users/${submitter._id}`)}
+          style={{ marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center' }}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${submitter.displayName}'s profile`}
+        >
+          {submitter.avatarUrl ? (
+            <Image
+              source={{ uri: submitter.avatarUrl }}
+              style={{ width: 24, height: 24, borderRadius: 12, marginRight: spacing.sm }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                marginRight: spacing.sm,
+                backgroundColor: colors.surface,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="person" size={14} color={colors.textMuted} />
+            </View>
+          )}
+          <Text style={text.muted}>
+            Submitted by <Text style={{ color: colors.primary, fontWeight: '600' }}>{submitter.displayName}</Text>
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginLeft: spacing.xs }} />
+        </Pressable>
+      ) : null}
+
+      <View style={{ marginTop: spacing.xl, alignItems: 'center' }}>
+        <VoteButton gemId={g.id} voteCount={g.voteCount} hasVoted={!!g.hasVoted} />
+      </View>
+
+      {canDeleteGem ? (
+        <Pressable
+          onPress={confirmDelete}
+          disabled={deleting}
+          accessibilityRole="button"
+          accessibilityLabel="Delete gem"
+          style={({ pressed }) => ({
+            marginTop: spacing.xl,
+            padding: spacing.md,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: colors.danger,
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            opacity: pressed || deleting ? 0.6 : 1,
+          })}
+        >
+          {deleting ? (
+            <ActivityIndicator size="small" color={colors.danger} />
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
+              <Text style={{ color: colors.danger, fontWeight: '600' }}>
+                {user?.isAdmin && submitterId !== user.id ? 'Delete gem (admin)' : 'Delete gem'}
+              </Text>
+            </>
+          )}
+        </Pressable>
+      ) : null}
+
+      <View style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
+        <Text style={[text.h2, { marginBottom: spacing.md }]}>
+          Comments{commentList.length > 0 ? ` (${commentList.length})` : ''}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderCommentRow = ({ item }: { item: CommentRowItem }) => {
+    const c = item.comment;
+    return (
+      <View style={{ marginLeft: item.depth ? spacing.lg : 0, paddingLeft: item.depth ? spacing.sm : 0, borderLeftWidth: item.depth ? 2 : 0, borderLeftColor: item.depth ? glass.border : 'transparent', marginBottom: spacing.sm }}>
+        <CommentRow
+          c={c}
+          canDelete={canDelete(c)}
+          onDelete={() => deleteComment.mutate(c.id)}
+          onReply={!item.isReply && user ? () => startReply(c.id) : undefined}
+        />
+        {!item.isReply && replyingTo === c.id ? (
+          <View style={{ marginLeft: spacing.lg, marginTop: spacing.sm, flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-end' }}>
+            <TextInput
+              value={replyText}
+              onChangeText={setReplyText}
+              placeholder={`Reply to ${c.user.displayName}…`}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              autoFocus
+              style={{
+                flex: 1,
+                backgroundColor: glass.fill,
+                color: colors.text,
+                borderWidth: 1,
+                borderColor: glass.border,
+                borderRadius: radius.md,
+                padding: spacing.sm,
+                fontSize: 13,
+                maxHeight: 80,
+              }}
+            />
+            <Pressable onPress={cancelReply} hitSlop={8} style={{ padding: spacing.xs }}>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => sendReply(c.id)}
+              disabled={createComment.isPending || !replyText.trim()}
+              style={({ pressed }) => ({
+                backgroundColor: colors.primary,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+                borderRadius: radius.md,
+                opacity: pressed || createComment.isPending || !replyText.trim() ? 0.5 : 1,
+              })}
+            >
+              <Ionicons name="send" size={14} color={colors.bg} />
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <AmbientGlow />
       <Stack.Screen options={{ title: g.name }} />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: spacing.lg }}
-        keyboardShouldPersistTaps="handled"
-      >
       {g.photoUrl ? (
         <Image source={{ uri: g.photoUrl }} style={{ width: '100%', height: 280, backgroundColor: colors.surfaceAlt }} />
       ) : (
@@ -153,190 +332,23 @@ export default function GemDetailScreen() {
         </View>
       )}
 
-      <View style={{ padding: spacing.lg }}>
-        <Text style={text.h1}>{g.name}</Text>
-        <Text style={[text.muted, { marginTop: spacing.xs }]}>
-          {categoryEmoji(g.category)} {g.category} · {formatTimeAgo(g.createdAt)}
-        </Text>
-
-        <Text style={[text.body, { marginTop: spacing.lg, lineHeight: 22 }]}>{g.description}</Text>
-
-        <View style={{ marginTop: spacing.lg, padding: spacing.md, backgroundColor: glass.fill, borderWidth: 1, borderColor: glass.border, borderRadius: radius.lg }}>
-          <Text style={text.muted}>Address</Text>
-          <Text style={[text.body, { marginTop: spacing.xs }]}>{g.address}</Text>
-        </View>
-
-        <Pressable
-          onPress={() => {
-            const url = g.mapsUrl
-              ?? `https://www.google.com/maps/place/${encodeURIComponent(g.name)}/@${lat},${lng},17z`;
-            Linking.openURL(url);
-          }}
-          style={({ pressed }) => ({
-            marginTop: spacing.lg,
-            padding: spacing.md,
-            backgroundColor: pressed ? glass.fillStrong : glass.fill,
-            borderWidth: 1,
-            borderColor: glass.amberBorder,
-            borderRadius: radius.lg,
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center',
-          })}
-        >
-          <Ionicons name="map-outline" size={18} color={colors.primary} style={{ marginRight: spacing.sm }} />
-          <Text style={[text.body, { color: colors.primary, fontWeight: '600' }]}>Open in Google Maps</Text>
-        </Pressable>
-
-        {submitter ? (
-          <Pressable
-            onPress={() => router.push(`/users/${submitter._id}`)}
-            style={{ marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center' }}
-            accessibilityRole="button"
-            accessibilityLabel={`View ${submitter.displayName}'s profile`}
-          >
-            {submitter.avatarUrl ? (
-              <Image
-                source={{ uri: submitter.avatarUrl }}
-                style={{ width: 24, height: 24, borderRadius: 12, marginRight: spacing.sm }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  marginRight: spacing.sm,
-                  backgroundColor: colors.surface,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Ionicons name="person" size={14} color={colors.textMuted} />
-              </View>
-            )}
-            <Text style={text.muted}>
-              Submitted by <Text style={{ color: colors.primary, fontWeight: '600' }}>{submitter.displayName}</Text>
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginLeft: spacing.xs }} />
-          </Pressable>
-        ) : null}
-
-        <View style={{ marginTop: spacing.xl, alignItems: 'center' }}>
-          <VoteButton gemId={g.id} voteCount={g.voteCount} hasVoted={!!g.hasVoted} />
-        </View>
-
-        {canDeleteGem ? (
-          <Pressable
-            onPress={confirmDelete}
-            disabled={deleting}
-            accessibilityRole="button"
-            accessibilityLabel="Delete gem"
-            style={({ pressed }) => ({
-              marginTop: spacing.xl,
-              padding: spacing.md,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: colors.danger,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              opacity: pressed || deleting ? 0.6 : 1,
-            })}
-          >
-            {deleting ? (
-              <ActivityIndicator size="small" color={colors.danger} />
-            ) : (
-              <>
-                <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
-                <Text style={{ color: colors.danger, fontWeight: '600' }}>
-                  {user?.isAdmin && submitterId !== user.id ? 'Delete gem (admin)' : 'Delete gem'}
-                </Text>
-              </>
-            )}
-          </Pressable>
-        ) : null}
-
-        {/* Comments list */}
-        <View style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
-          <Text style={[text.h2, { marginBottom: spacing.md }]}>
-            Comments{commentList.length > 0 ? ` (${commentList.length})` : ''}
-          </Text>
-
-          {comments.isLoading ? (
+      <FlatList
+        data={comments.isLoading ? [] : commentRows}
+        keyExtractor={(item) => item.id}
+        renderItem={renderCommentRow}
+        ListHeaderComponent={renderGemContent}
+        ListEmptyComponent={
+          comments.isLoading ? (
             <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.lg }} />
-          ) : commentList.length === 0 ? (
-            <Text style={[text.muted, { marginBottom: spacing.md }]}>No comments yet.</Text>
           ) : (
-            topLevel.map((c) => {
-              const replies = repliesByParent.get(c.id) ?? [];
-              return (
-                <View key={c.id} style={{ marginBottom: spacing.md }}>
-                  <CommentRow
-                    c={c}
-                    canDelete={canDelete(c)}
-                    onDelete={() => deleteComment.mutate(c.id)}
-                    onReply={user ? () => startReply(c.id) : undefined}
-                  />
-                  {replies.map((r) => (
-                    <View key={r.id} style={{ marginLeft: spacing.lg, marginTop: spacing.xs, paddingLeft: spacing.sm, borderLeftWidth: 2, borderLeftColor: glass.border }}>
-                      <CommentRow
-                        c={r}
-                        canDelete={canDelete(r)}
-                        onDelete={() => deleteComment.mutate(r.id)}
-                      />
-                    </View>
-                  ))}
-                  {replyingTo === c.id ? (
-                    <View style={{ marginLeft: spacing.lg, marginTop: spacing.sm, flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-end' }}>
-                      <TextInput
-                        value={replyText}
-                        onChangeText={setReplyText}
-                        placeholder={`Reply to ${c.user.displayName}…`}
-                        placeholderTextColor={colors.textMuted}
-                        multiline
-                        autoFocus
-                        style={{
-                          flex: 1,
-                          backgroundColor: glass.fill,
-                          color: colors.text,
-                          borderWidth: 1,
-                          borderColor: glass.border,
-                          borderRadius: radius.md,
-                          padding: spacing.sm,
-                          fontSize: 13,
-                          maxHeight: 80,
-                        }}
-                      />
-                      <Pressable
-                        onPress={cancelReply}
-                        hitSlop={8}
-                        style={{ padding: spacing.xs }}
-                      >
-                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>Cancel</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => sendReply(c.id)}
-                        disabled={createComment.isPending || !replyText.trim()}
-                        style={({ pressed }) => ({
-                          backgroundColor: colors.primary,
-                          paddingHorizontal: spacing.md,
-                          paddingVertical: spacing.sm,
-                          borderRadius: radius.md,
-                          opacity: pressed || createComment.isPending || !replyText.trim() ? 0.5 : 1,
-                        })}
-                      >
-                        <Ionicons name="send" size={14} color={colors.bg} />
-                      </Pressable>
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })
-          )}
-        </View>
-      </View>
-      </ScrollView>
+            <Text style={[text.muted, { paddingHorizontal: spacing.lg, paddingBottom: spacing.md }]}>No comments yet.</Text>
+          )
+        }
+        ListFooterComponent={<View style={{ height: spacing.xl }} />}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      />
 
       {/* Fixed bottom input bar */}
       {user ? (
