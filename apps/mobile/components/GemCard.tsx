@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,7 +42,7 @@ function submitterAvatar(submittedBy: Gem['submittedBy']): string | null {
   return typeof submittedBy === 'object' && submittedBy ? submittedBy.avatarUrl : null;
 }
 
-export function GemCard({ gem, highlight = false, showTopBadge = false }: Props) {
+export const GemCard = memo(function GemCard({ gem, highlight = false, showTopBadge = false }: Props) {
   const area = gem.city?.trim() || '';
   const addedBy = submitterName(gem.submittedBy);
 
@@ -334,7 +335,9 @@ export function GemCard({ gem, highlight = false, showTopBadge = false }: Props)
       </Pressable>
     </Link>
   );
-}
+});
+
+GemCard.displayName = 'GemCard';
 
 const thumb = {
   width: rf(92),

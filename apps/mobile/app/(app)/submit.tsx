@@ -12,9 +12,10 @@ import { PlacesSearchField, type PlaceResult } from '../../components/PlacesSear
 import { CityPickerModal } from '../../components/CityPickerModal';
 import { registerForPush } from '../../lib/push';
 import { AmbientGlow } from '../../components/AmbientGlow';
-import { gemsApi, type Gem } from '../../services/api';
+import { gemsApi, type Gem, type UserGemsResponse } from '../../services/api';
 import { logger } from '../../services/logger';
 import { useCategories } from '../../hooks/useGems';
+import { useAuthStore } from '../../stores/authStore';
 import { colors, glass, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const SubmitSchema = z.object({
@@ -35,6 +36,7 @@ interface PickedPhoto {
 export default function SubmitScreen() {
   const router = useRouter();
   const qc = useQueryClient();
+  const user = useAuthStore((s) => s.user);
   const categories = useCategories();
   const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [place, setPlace] = useState<PlaceResult | null>(null);
@@ -108,7 +110,16 @@ export default function SubmitScreen() {
     },
     onSuccess: (gem: Gem) => {
       qc.invalidateQueries({ queryKey: ['gems'] });
-      qc.invalidateQueries({ queryKey: ['user-gems'] });
+      if (user?.id) {
+        qc.setQueryData<UserGemsResponse>(['user-gems', user.id], (prev) =>
+          prev
+            ? {
+                ...prev,
+                items: [gem, ...prev.items.filter((item) => item.id !== gem.id)],
+              }
+            : prev
+        );
+      }
       logger.event('gem_submitted', { gemId: gem.id, name: gem.name });
       // They now have a gem to get votes on — ask for push permission in
       // context. Best-effort; prompts only the first time.

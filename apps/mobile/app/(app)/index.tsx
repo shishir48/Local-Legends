@@ -166,8 +166,13 @@ export default function FeedScreen() {
         data={items}
         keyExtractor={(g) => g.id}
         renderItem={({ item, index }) => <GemCard gem={item} highlight={!topGems && index === 0} showTopBadge={topGems} />}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        updateCellsBatchingPeriod={50}
+        windowSize={5}
+        removeClippedSubviews
         ListHeaderComponent={header}
-ListEmptyComponent={
+        ListEmptyComponent={
           data.isError ? (
             <View style={{ alignItems: 'center', padding: spacing.xl }}>
               <Text style={text.body}>Couldn't load gems.</Text>
