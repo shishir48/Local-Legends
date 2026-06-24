@@ -225,14 +225,14 @@ export async function createGem(input: CreateGemInput) {
   });
 
   // Fire-and-forget: notify followers about the new gem.
-  notifyFollowers(gem.name, String(input.submittedBy)).catch(
+  notifyFollowers(gem.id, gem.name, String(input.submittedBy)).catch(
     (err) => console.warn('[push] follower notify failed:', (err as Error).message),
   );
 
   return gem;
 }
 
-async function notifyFollowers(gemName: string, submitterId: string): Promise<void> {
+async function notifyFollowers(gemId: string, gemName: string, submitterId: string): Promise<void> {
   const submitter = await User.findById(submitterId).select('displayName followers').lean();
   if (!submitter || !submitter.followers?.length) return;
 
@@ -241,7 +241,7 @@ async function notifyFollowers(gemName: string, submitterId: string): Promise<vo
     sendToUser(String(followerId), {
       title,
       body: gemName,
-      data: { type: 'new_gem' },
+      data: { type: 'new_gem', gemId },
     }).catch((err) => console.warn('[push] follower send failed:', (err as Error).message));
   }
 }
