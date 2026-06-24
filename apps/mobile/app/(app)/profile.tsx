@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, Text, View, Image } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View, Image, type DimensionValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,10 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
   );
 }
 
+function SkeletonBlock({ width, height }: { width: DimensionValue; height: number }) {
+  return <View style={{ width, height, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)' }} />;
+}
+
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -44,6 +48,7 @@ export default function ProfileScreen() {
 
   const totalUpvotes = submissions.data?.totalUpvotes ?? 0;
   const items = submissions.data?.items ?? [];
+  const isRefreshing = submissions.isFetching && !submissions.isLoading;
 
   const header = (
     <View style={{ paddingVertical: spacing.lg }}>
@@ -123,7 +128,26 @@ export default function ProfileScreen() {
         ListFooterComponent={footer}
         ListEmptyComponent={
           submissions.isLoading ? (
-            <View>
+            <View style={{ paddingTop: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg }}>
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    marginRight: spacing.md,
+                    backgroundColor: 'rgba(255,255,255,0.08)',
+                  }}
+                />
+                <View style={{ flex: 1, gap: spacing.sm }}>
+                  <SkeletonBlock width="54%" height={18} />
+                  <SkeletonBlock width="40%" height={13} />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: radius.lg, padding: spacing.md, minHeight: 74 }} />
+                <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: radius.lg, padding: spacing.md, minHeight: 74 }} />
+              </View>
               <GemCardSkeleton />
               <GemCardSkeleton />
             </View>
@@ -137,6 +161,13 @@ export default function ProfileScreen() {
         }
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={submissions.refetch}
+            tintColor={colors.primary}
+          />
+        }
       />
     </SafeAreaView>
   );

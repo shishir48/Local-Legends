@@ -53,7 +53,7 @@ export default function LoginScreen() {
           control={control}
           name="password"
           label="Password"
-          secureTextEntry
+          showPasswordToggle
           autoCapitalize="none"
           autoComplete="password"
           textContentType="password"

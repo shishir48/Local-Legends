@@ -63,7 +63,7 @@ export default function RegisterScreen() {
           control={control}
           name="password"
           label="Password"
-          secureTextEntry
+          showPasswordToggle
           autoCapitalize="none"
           autoComplete="new-password"
           textContentType="newPassword"
