@@ -110,6 +110,8 @@ export const gemsApi = {
   vote: (id: string) =>
     api.post<{ voted: boolean; voteCount: number }>(`/api/gems/${id}/vote`).then((r) => r.data),
   remove: (id: string) => api.delete<void>(`/api/gems/${id}`).then((r) => r.data),
+  update: (id: string, patch: { name?: string; description?: string; category?: Gem['category']; address?: string; city?: string; mapsUrl?: string | null }) =>
+    api.patch<Gem>(`/api/gems/${id}`, patch).then((r) => r.data),
 };
 
 export interface PublicUser {

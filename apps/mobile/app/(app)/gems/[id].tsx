@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Linking, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Linking, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { VoteButton } from '../../../components/VoteButton';
 import { AmbientGlow } from '../../../components/AmbientGlow';
 import { categoryEmoji, formatTimeAgo } from '../../../utils/format';
 import { colors, glass, radius, spacing, text } from '../../../utils/theme';
+
+const GEM_CATEGORIES = ['food', 'nature', 'shop', 'bar', 'art', 'other'] as const;
 
 type CommentRowItem = {
   id: string;
@@ -28,6 +30,14 @@ export default function GemDetailScreen() {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editCat, setEditCat] = useState<typeof GEM_CATEGORIES[number]>('food');
+  const [editAddr, setEditAddr] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editMapsUrl, setEditMapsUrl] = useState('');
+  const [editing, setEditing] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -229,34 +239,63 @@ export default function GemDetailScreen() {
       </View>
 
       {canDeleteGem ? (
-        <Pressable
-          onPress={confirmDelete}
-          disabled={deleting}
-          accessibilityRole="button"
-          accessibilityLabel="Delete gem"
-          style={({ pressed }) => ({
-            marginTop: spacing.xl,
-            padding: spacing.md,
-            borderRadius: radius.md,
-            borderWidth: 1,
-            borderColor: colors.danger,
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            opacity: pressed || deleting ? 0.6 : 1,
-          })}
-        >
-          {deleting ? (
-            <ActivityIndicator size="small" color={colors.danger} />
-          ) : (
-            <>
-              <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
-              <Text style={{ color: colors.danger, fontWeight: '600' }}>
-                {user?.isAdmin && submitterId !== user.id ? 'Delete gem (admin)' : 'Delete gem'}
-              </Text>
-            </>
-          )}
-        </Pressable>
+        <View style={{ marginTop: spacing.xl, flexDirection: 'row', gap: spacing.md }}>
+          <Pressable
+            onPress={() => {
+              setEditName(g.name);
+              setEditDesc(g.description);
+              setEditCat(g.category);
+              setEditAddr(g.address);
+              setEditCity(g.city);
+              setEditMapsUrl(g.mapsUrl ?? '');
+              setEditOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Edit gem"
+            style={({ pressed }) => ({
+              flex: 1,
+              padding: spacing.md,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons name="pencil" size={18} color={colors.primary} style={{ marginRight: spacing.xs }} />
+            <Text style={{ color: colors.primary, fontWeight: '600' }}>Edit</Text>
+          </Pressable>
+          <Pressable
+            onPress={confirmDelete}
+            disabled={deleting}
+            accessibilityRole="button"
+            accessibilityLabel="Delete gem"
+            style={({ pressed }) => ({
+              flex: 1,
+              padding: spacing.md,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderColor: colors.danger,
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              opacity: pressed || deleting ? 0.6 : 1,
+            })}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={colors.danger} />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: spacing.xs }} />
+                <Text style={{ color: colors.danger, fontWeight: '600' }}>
+                  {user?.isAdmin && submitterId !== user.id ? 'Delete (admin)' : 'Delete'}
+                </Text>
+              </>
+            )}
+          </Pressable>
+        </View>
       ) : null}
 
       <View style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
@@ -399,6 +438,100 @@ export default function GemDetailScreen() {
           </Pressable>
         </View>
       ) : null}
+
+      {/* Edit gem modal */}
+      <Modal visible={editOpen} transparent animationType="fade" onRequestClose={() => setEditOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: spacing.lg }} onPress={() => setEditOpen(false)}>
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, maxHeight: '90%', padding: spacing.lg }}>
+            <Text style={[text.h2, { marginBottom: spacing.lg }]}>Edit gem</Text>
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>Name</Text>
+            <TextInput value={editName} onChangeText={setEditName} placeholderTextColor={colors.textMuted} maxLength={100}
+              style={{ backgroundColor: glass.fill, color: colors.text, borderWidth: 1, borderColor: glass.border, borderRadius: radius.md, padding: spacing.md, fontSize: 16, marginBottom: spacing.md }}
+            />
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>Description</Text>
+            <TextInput value={editDesc} onChangeText={setEditDesc} placeholderTextColor={colors.textMuted} multiline maxLength={500}
+              style={{ backgroundColor: glass.fill, color: colors.text, borderWidth: 1, borderColor: glass.border, borderRadius: radius.md, padding: spacing.md, fontSize: 16, marginBottom: spacing.md, minHeight: 80 }}
+            />
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>Category</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md }}>
+              {GEM_CATEGORIES.map((cat) => (
+                <Pressable
+                  key={cat}
+                  onPress={() => setEditCat(cat)}
+                  style={{
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: spacing.xs,
+                    borderRadius: radius.pill,
+                    backgroundColor: editCat === cat ? colors.primary : glass.fill,
+                    borderWidth: 1,
+                    borderColor: editCat === cat ? colors.primary : glass.border,
+                  }}
+                >
+                  <Text style={{ color: editCat === cat ? colors.bg : colors.text, fontWeight: '600', fontSize: 13, textTransform: 'capitalize' }}>{cat}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>Address</Text>
+            <TextInput value={editAddr} onChangeText={setEditAddr} placeholderTextColor={colors.textMuted}
+              style={{ backgroundColor: glass.fill, color: colors.text, borderWidth: 1, borderColor: glass.border, borderRadius: radius.md, padding: spacing.md, fontSize: 16, marginBottom: spacing.md }}
+            />
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>City</Text>
+            <TextInput value={editCity} onChangeText={setEditCity} placeholderTextColor={colors.textMuted}
+              style={{ backgroundColor: glass.fill, color: colors.text, borderWidth: 1, borderColor: glass.border, borderRadius: radius.md, padding: spacing.md, fontSize: 16, marginBottom: spacing.md }}
+            />
+
+            <Text style={[text.muted, { marginBottom: spacing.xs }]}>Google Maps URL (optional)</Text>
+            <TextInput value={editMapsUrl} onChangeText={setEditMapsUrl} placeholderTextColor={colors.textMuted} autoCapitalize="none"
+              style={{ backgroundColor: glass.fill, color: colors.text, borderWidth: 1, borderColor: glass.border, borderRadius: radius.md, padding: spacing.md, fontSize: 16, marginBottom: spacing.lg }}
+            />
+
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <Pressable onPress={() => setEditOpen(false)}
+                style={({ pressed }) => ({ flex: 1, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: glass.border, alignItems: 'center', opacity: pressed ? 0.7 : 1 })}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600' }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  if (!editName.trim() || !editDesc.trim() || !editAddr.trim() || !editCity.trim()) return;
+                  setEditing(true);
+                  try {
+                    const updated = await gemsApi.update(id!, {
+                      name: editName.trim(),
+                      description: editDesc.trim(),
+                      category: editCat,
+                      address: editAddr.trim(),
+                      city: editCity.trim(),
+                      mapsUrl: editMapsUrl.trim() || null,
+                    });
+                    queryClient.setQueryData(['gem', id], updated);
+                    queryClient.invalidateQueries({ queryKey: ['gems'] });
+                    queryClient.invalidateQueries({ queryKey: ['user-gems'] });
+                    setEditOpen(false);
+                  } catch {
+                    Alert.alert('Update failed', 'Could not save changes. Try again.');
+                  } finally {
+                    setEditing(false);
+                  }
+                }}
+                disabled={editing || !editName.trim() || !editDesc.trim() || !editAddr.trim() || !editCity.trim()}
+                style={({ pressed }) => ({ flex: 1, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: 'center', opacity: pressed || editing || !editName.trim() || !editDesc.trim() || !editAddr.trim() || !editCity.trim() ? 0.6 : 1 })}
+              >
+                {editing ? (
+                  <ActivityIndicator size="small" color={colors.bg} />
+                ) : (
+                  <Text style={{ color: colors.bg, fontWeight: '600' }}>Save</Text>
+                )}
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
