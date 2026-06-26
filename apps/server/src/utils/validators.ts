@@ -40,6 +40,7 @@ export const ListGemsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   top: z.coerce.boolean().optional(),
+  new: z.coerce.boolean().optional(),
   q: z.string().trim().max(200).optional(),
 });
 

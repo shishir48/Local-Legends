@@ -62,6 +62,7 @@ interface ListOptions {
   page: number;
   limit: number;
   top?: boolean;
+  new?: boolean;
   q?: string;
 }
 
@@ -93,6 +94,36 @@ export async function listGems(opts: ListOptions) {
       page: 1,
       limit: 5,
       total: items.length,
+      pages: 1,
+    };
+  }
+
+  if (opts.new) {
+    // New gems — top 5 most recent in the selected city
+    filter.city = opts.city?.toLowerCase();
+    const newItems = await Gem.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('submittedBy', 'displayName avatarUrl')
+      .lean();
+
+    const gemIds = newItems.map((g) => g._id);
+    const counts = gemIds.length > 0
+      ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+          { $match: { gem: { $in: gemIds } } },
+          { $group: { _id: '$gem', count: { $sum: 1 } } },
+        ])
+      : [];
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    return {
+      items: newItems.map((g) => ({
+        ...withId(g),
+        commentCount: countMap.get(String(g._id)) ?? 0,
+      })),
+      page: 1,
+      limit: 5,
+      total: newItems.length,
       pages: 1,
     };
   }

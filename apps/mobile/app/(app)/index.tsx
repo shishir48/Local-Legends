@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
-import { useGems, useTopGems, useCategories } from '../../hooks/useGems';
+import { useGems, useTopGems, useNewGems, useCategories } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
 import { CategoryFilter } from '../../components/CategoryFilter';
@@ -161,6 +161,7 @@ export default function FeedScreen() {
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [topGems, setTopGems] = useState(false);
+  const [newGems, setNewGems] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -169,12 +170,14 @@ export default function FeedScreen() {
   const isSearching = searchQuery.trim().length > 0;
   const gems = useGems({ category, city, q: isSearching ? searchQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
   const topGemsQuery = useTopGems();
+  const newGemsQuery = useNewGems(newGems && !isSearching ? city : null);
   const categories = useCategories();
   const cats = categories.data?.items ?? [];
 
-  // Show search results when searching, top gems when toggled, otherwise normal feed
+  // Show search results when searching, new gems / top gems when toggled, otherwise normal feed
   const isTopGemsView = topGems && !isSearching;
-  const data = isSearching ? gems : (isTopGemsView ? topGemsQuery : gems);
+  const isNewGemsView = newGems && !isSearching;
+  const data = isSearching ? gems : (isNewGemsView ? newGemsQuery : (isTopGemsView ? topGemsQuery : gems));
 
   useEffect(() => {
     SecureStore.getItemAsync(CITY_KEY).then((stored) => {
@@ -187,6 +190,7 @@ export default function FeedScreen() {
     await SecureStore.setItemAsync(CITY_KEY, chosen);
     setCity(chosen);
     setTopGems(false);
+    setNewGems(false);
     setShowPicker(false);
   };
 
@@ -218,6 +222,7 @@ export default function FeedScreen() {
       onChange={(id) => {
         setCategory(id);
         if (topGems) setTopGems(false);
+        if (newGems) setNewGems(false);
       }}
       onOpenFilter={() => setShowFilter(true)}
       onSearchChange={setSearchQuery}
@@ -278,8 +283,15 @@ export default function FeedScreen() {
       <FilterSheet
         visible={showFilter}
         topGems={topGems}
+        newGems={newGems}
         onToggleTopGems={() => {
           setTopGems((prev) => !prev);
+          setNewGems(false);
+          setCategory(null);
+        }}
+        onToggleNewGems={() => {
+          setNewGems((prev) => !prev);
+          setTopGems(false);
           setCategory(null);
         }}
         onChangeCity={() => setShowPicker(true)}

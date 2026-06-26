@@ -4,12 +4,14 @@ import { colors, glass, radius, spacing, text } from '../utils/theme';
 interface Props {
   visible: boolean;
   topGems: boolean;
+  newGems: boolean;
   onToggleTopGems: () => void;
+  onToggleNewGems: () => void;
   onChangeCity: () => void;
   onClose: () => void;
 }
 
-export function FilterSheet({ visible, topGems, onToggleTopGems, onChangeCity, onClose }: Props) {
+export function FilterSheet({ visible, topGems, newGems, onToggleTopGems, onToggleNewGems, onChangeCity, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
@@ -64,6 +66,43 @@ export function FilterSheet({ visible, topGems, onToggleTopGems, onChangeCity, o
               }}
             >
               {topGems && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.bg }} />}
+            </View>
+          </Pressable>
+
+          <View style={{ height: 1, backgroundColor: glass.border, marginVertical: spacing.sm }} />
+
+          <Pressable
+            onPress={() => {
+              onToggleNewGems();
+              onClose();
+            }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingVertical: spacing.sm,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Text style={{ fontSize: 18 }}>🆕</Text>
+              <View>
+                <Text style={[text.body, { fontWeight: '600' }]}>New Gems</Text>
+                <Text style={text.muted}>Most recent in this city</Text>
+              </View>
+            </View>
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                borderWidth: 2,
+                borderColor: newGems ? colors.primary : colors.border,
+                backgroundColor: newGems ? colors.primary : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {newGems && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.bg }} />}
             </View>
           </Pressable>
 

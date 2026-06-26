@@ -48,6 +48,15 @@ export function useTopGems() {
   });
 }
 
+export function useNewGems(city: string | null) {
+  return useQuery({
+    enabled: !!city,
+    queryKey: ['new-gems', city],
+    queryFn: () => gemsApi.list({ city: city!, new: true }),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useGem(id: string | undefined) {
   return useQuery({
     enabled: !!id,
