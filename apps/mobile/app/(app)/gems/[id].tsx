@@ -42,6 +42,13 @@ export default function GemDetailScreen() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([gem.refetch(), comments.refetch()]);
+    setRefreshing(false);
+  };
 
   // Build comment tree — must be before any early return to keep hook count stable
   const commentList = comments.data?.items ?? [];
@@ -387,6 +394,8 @@ export default function GemDetailScreen() {
         contentContainerStyle={{ paddingBottom: spacing.lg }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
 
       {/* Fixed bottom input bar */}
