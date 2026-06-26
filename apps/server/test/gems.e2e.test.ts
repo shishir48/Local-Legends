@@ -420,3 +420,43 @@ describe('GET /api/gems pagination & filters', () => {
     expect(food.body.total).toBe(2);
   });
 });
+
+describe('GET /api/gems text search', () => {
+  it('returns gems matching the search query by name', async () => {
+    const owner = await makeUser();
+    await createGem(owner.token, { name: 'Blue Tokai Coffee' });
+    await createGem(owner.token, { name: 'Mumbai Chai Wala', description: 'chai and snacks' });
+
+    const res = await request(app).get('/api/gems').query({ q: 'coffee', sort: 'search' }).expect(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].name).toBe('Blue Tokai Coffee');
+  });
+
+  it('searches across description and address too', async () => {
+    const owner = await makeUser();
+    await createGem(owner.token, { name: 'Some Place', description: 'best biryani in town' });
+    await createGem(owner.token, { name: 'Another', description: 'regular food' });
+
+    const res = await request(app).get('/api/gems').query({ q: 'biryani', sort: 'search' }).expect(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].name).toBe('Some Place');
+  });
+
+  it('returns empty results for a non-matching query', async () => {
+    const owner = await makeUser();
+    await createGem(owner.token, { name: 'Cafe ABC' });
+
+    const res = await request(app).get('/api/gems').query({ q: 'nonexistent', sort: 'search' }).expect(200);
+    expect(res.body.items).toHaveLength(0);
+  });
+
+  it('coexists with city filter', async () => {
+    const owner = await makeUser();
+    await createGem(owner.token, { name: 'Pizza Place', city: 'Mumbai' });
+    await createGem(owner.token, { name: 'Pizza Corner', city: 'Chennai' });
+
+    const res = await request(app).get('/api/gems').query({ q: 'pizza', sort: 'search', city: 'Mumbai' }).expect(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].city).toBe('mumbai');
+  });
+});

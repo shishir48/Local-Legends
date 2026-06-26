@@ -25,15 +25,16 @@ function updateGemInUserResponse(
   };
 }
 
-export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent' } = {}) {
+export function useGems(opts: { category?: string | null; city?: string | null; sort?: 'votes' | 'recent' | 'search'; q?: string } = {}) {
   return useQuery({
     enabled: !!opts.city,
-    queryKey: ['gems', { category: opts.category ?? null, city: opts.city ?? null, sort: opts.sort ?? 'votes' }],
+    queryKey: ['gems', { category: opts.category ?? null, city: opts.city ?? null, sort: opts.sort ?? 'votes', q: opts.q ?? null }],
     queryFn: () =>
       gemsApi.list({
         category: opts.category ?? undefined,
         city: opts.city ?? undefined,
         sort: opts.sort ?? 'votes',
+        q: opts.q ?? undefined,
       }),
     staleTime: 5 * 60 * 1000,
   });

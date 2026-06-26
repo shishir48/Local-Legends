@@ -5,6 +5,34 @@ import { ApiError } from '../utils/ApiError';
 import * as gemService from '../services/gemService';
 import { ObjectIdSchema, UpdateProfileSchema } from '../utils/validators';
 
+export async function listFollowers(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = ObjectIdSchema.parse(req.params.id);
+    const user = await User.findById(id)
+      .select('followers')
+      .populate('followers', 'displayName avatarUrl')
+      .lean();
+    if (!user) throw ApiError.notFound('User not found');
+    res.json({ items: user.followers ?? [] });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listFollowing(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = ObjectIdSchema.parse(req.params.id);
+    const user = await User.findById(id)
+      .select('following')
+      .populate('following', 'displayName avatarUrl')
+      .lean();
+    if (!user) throw ApiError.notFound('User not found');
+    res.json({ items: user.following ?? [] });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateMe(req: Request, res: Response, next: NextFunction) {
   try {
     const patch = UpdateProfileSchema.parse(req.body);
@@ -22,7 +50,7 @@ export async function updateMe(req: Request, res: Response, next: NextFunction) 
 export async function gemsBySubmitter(req: Request, res: Response, next: NextFunction) {
   try {
     const id = ObjectIdSchema.parse(req.params.id);
-    const user = await User.findById(id).select('displayName avatarUrl followers');
+    const user = await User.findById(id).select('displayName avatarUrl followers following');
     if (!user) throw ApiError.notFound('User not found');
 
     const isFollowing =
@@ -37,6 +65,7 @@ export async function gemsBySubmitter(req: Request, res: Response, next: NextFun
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
         followersCount: (user.followers ?? []).length,
+        followingCount: (user.following ?? []).length,
       },
       isFollowing,
       items,

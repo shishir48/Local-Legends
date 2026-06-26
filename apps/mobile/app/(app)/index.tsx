@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { FlatList, Modal, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import { useGems, useTopGems, useCategories } from '../../hooks/useGems';
 import { GemCard } from '../../components/GemCard';
 import { GemCardSkeleton } from '../../components/GemCardSkeleton';
@@ -9,7 +11,8 @@ import { CategoryFilter } from '../../components/CategoryFilter';
 import { CityPickerModal } from '../../components/CityPickerModal';
 import { FilterSheet } from '../../components/FilterSheet';
 import { AmbientGlow } from '../../components/AmbientGlow';
-import { colors, rf, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
+import GemMap from '../../components/GemMap';
+import { colors, glass, rf, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 
 const CITY_KEY = 'll.city';
 
@@ -18,15 +21,27 @@ function FeedHeader({
   categories,
   active,
   topGems,
+  searchQuery,
+  searchFocused,
+  searchInputRef,
   onChange,
   onOpenFilter,
+  onSearchChange,
+  onSearchFocus,
+  onOpenMap,
 }: {
   city: string;
   categories: { id: string; label: string; emoji: string }[];
   active: string | null;
   topGems: boolean;
+  searchQuery: string;
+  searchFocused: boolean;
+  searchInputRef: React.RefObject<TextInput | null>;
   onChange: (id: string | null) => void;
   onOpenFilter: () => void;
+  onSearchChange: (q: string) => void;
+  onSearchFocus: (focused: boolean) => void;
+  onOpenMap: () => void;
 }) {
   return (
     <View>
@@ -45,7 +60,23 @@ function FeedHeader({
             {topGems ? '🏆 Top-rated across all cities' : `📍 ${city} · Voted by locals, ranked by you.`}
           </Text>
         </View>
-        <Pressable
+        <View style={{ flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs }}>
+          <Pressable
+            onPress={onOpenMap}
+            accessibilityRole="button"
+            accessibilityLabel="Open map"
+            style={{
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.sm,
+              borderRadius: radius.pill,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <Ionicons name="map-outline" size={18} color={colors.text} />
+          </Pressable>
+          <Pressable
           onPress={onOpenFilter}
           accessibilityRole="button"
           accessibilityLabel="Open filters"
@@ -67,6 +98,45 @@ function FeedHeader({
           </Text>
         </Pressable>
       </View>
+      </View>
+
+      {/* Search bar */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: glass.fill,
+          borderWidth: 1,
+          borderColor: searchFocused ? colors.primary : glass.border,
+          borderRadius: radius.pill,
+          paddingHorizontal: spacing.md,
+        }}>
+          <Ionicons name="search" size={16} color={colors.textMuted} />
+          <TextInput
+            ref={searchInputRef}
+            value={searchQuery}
+            onChangeText={onSearchChange}
+            onFocus={() => onSearchFocus(true)}
+            onBlur={() => onSearchFocus(false)}
+            placeholder="Search gems…"
+            placeholderTextColor={colors.textMuted}
+            returnKeyType="search"
+            style={{
+              flex: 1,
+              color: colors.text,
+              fontSize: 14,
+              paddingVertical: spacing.sm,
+              paddingLeft: spacing.sm,
+            }}
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable onPress={() => { onSearchChange(''); searchInputRef.current?.blur(); }} hitSlop={8}>
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
       <CategoryFilter categories={categories} active={active} onChange={onChange} />
     </View>
   );
@@ -91,12 +161,20 @@ export default function FeedScreen() {
   const [showFilter, setShowFilter] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
   const [topGems, setTopGems] = useState(false);
-  const gems = useGems({ category, city });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const searchInputRef = useRef<TextInput>(null);
+  const router = useRouter();
+  const isSearching = searchQuery.trim().length > 0;
+  const gems = useGems({ category, city, q: isSearching ? searchQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
   const topGemsQuery = useTopGems();
   const categories = useCategories();
   const cats = categories.data?.items ?? [];
 
-  const data = topGems ? topGemsQuery : gems;
+  // Show search results when searching, top gems when toggled, otherwise normal feed
+  const isTopGemsView = topGems && !isSearching;
+  const data = isSearching ? gems : (isTopGemsView ? topGemsQuery : gems);
 
   useEffect(() => {
     SecureStore.getItemAsync(CITY_KEY).then((stored) => {
@@ -133,13 +211,19 @@ export default function FeedScreen() {
     <FeedHeader
       city={city}
       categories={cats}
-      active={topGems ? null : category}
-      topGems={topGems}
+      active={isTopGemsView ? null : category}
+      topGems={isTopGemsView}
+      searchQuery={searchQuery}
+      searchFocused={searchFocused}
       onChange={(id) => {
         setCategory(id);
         if (topGems) setTopGems(false);
       }}
       onOpenFilter={() => setShowFilter(true)}
+      onSearchChange={setSearchQuery}
+      onSearchFocus={setSearchFocused}
+      onOpenMap={() => setShowMap(true)}
+      searchInputRef={searchInputRef}
     />
   );
 
@@ -201,6 +285,16 @@ export default function FeedScreen() {
         onChangeCity={() => setShowPicker(true)}
         onClose={() => setShowFilter(false)}
       />
+      <Modal visible={showMap} animationType="slide" onRequestClose={() => setShowMap(false)}>
+        <GemMap
+          gems={items}
+          onClose={() => setShowMap(false)}
+          onGemPress={(gemId) => {
+            setShowMap(false);
+            router.push(`/gems/${gemId}`);
+          }}
+        />
+      </Modal>
     </SafeAreaView>
   );
 }

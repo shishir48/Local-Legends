@@ -56,6 +56,10 @@ GemSchema.index(
   { placeId: 1 },
   { unique: true, partialFilterExpression: { placeId: { $type: 'string' } } }
 ); // no duplicate places
+GemSchema.index(
+  { name: 'text', description: 'text', address: 'text', city: 'text' },
+  { default_language: 'none' }
+); // full-text search across name, description, address, city
 
 GemSchema.set('toJSON', {
   virtuals: true,

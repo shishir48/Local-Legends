@@ -11,6 +11,7 @@ import { categoryEmoji, formatVotes } from '../../utils/format';
 import { colors, glass, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
 import { usersApi } from '../../services/api';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 function StatCard({ value, label }: { value: string | number; label: string }) {
   return (
@@ -40,10 +41,16 @@ export default function ProfileScreen() {
   const logout = useAuthStore((s) => s.logout);
   const setUser = useAuthStore((s) => s.setUser);
   const submissions = useUserGems(user?.id);
+  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followerList, setFollowerList] = useState<{ _id: string; displayName: string; avatarUrl: string | null }[]>([]);
+  const [followingList, setFollowingList] = useState<{ _id: string; displayName: string; avatarUrl: string | null }[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
 
   if (!user) {
     return (
@@ -98,7 +105,37 @@ export default function ProfileScreen() {
 
       <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
         <StatCard value={items.length} label="Gems" />
-        <StatCard value={formatVotes(totalUpvotes)} label="Upvotes received" />
+        <StatCard value={formatVotes(totalUpvotes)} label="Upvotes" />
+      </View>
+      <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={async () => {
+            setLoadingList(true);
+            setShowFollowers(true);
+            try {
+              const res = await usersApi.followers(user.id);
+              setFollowerList(res.items);
+            } catch { setFollowerList([]); }
+            setLoadingList(false);
+          }}
+        >
+          <StatCard value={submissions.data?.user.followersCount ?? 0} label="Followers" />
+        </Pressable>
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={async () => {
+            setLoadingList(true);
+            setShowFollowing(true);
+            try {
+              const res = await usersApi.following(user.id);
+              setFollowingList(res.items);
+            } catch { setFollowingList([]); }
+            setLoadingList(false);
+          }}
+        >
+          <StatCard value={submissions.data?.user.followingCount ?? 0} label="Following" />
+        </Pressable>
       </View>
 
       <Text style={[text.h2, { marginBottom: spacing.md }]}>Your gems</Text>
@@ -284,6 +321,76 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
           </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Followers modal */}
+      <Modal visible={showFollowers} transparent animationType="fade" onRequestClose={() => setShowFollowers(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' }} onPress={() => setShowFollowers(false)}>
+          <View style={{ flex: 1, marginTop: 100, backgroundColor: colors.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg }}>
+            <Text style={[text.h2, { marginBottom: spacing.md }]}>Followers</Text>
+            {loadingList ? (
+              <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />
+            ) : followerList.length === 0 ? (
+              <Text style={[text.muted, { textAlign: 'center', paddingVertical: spacing.xl }]}>No followers yet.</Text>
+            ) : (
+              <FlatList
+                data={followerList}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => { setShowFollowers(false); router.push(`/users/${item._id}`); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}
+                  >
+                    {item.avatarUrl ? (
+                      <Image source={{ uri: item.avatarUrl }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: spacing.sm }} />
+                    ) : (
+                      <View style={{ width: 36, height: 36, borderRadius: 18, marginRight: spacing.sm, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="person" size={18} color={colors.textMuted} />
+                      </View>
+                    )}
+                    <Text style={[text.body, { fontWeight: '600' }]}>{item.displayName}</Text>
+                  </Pressable>
+                )}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Following modal */}
+      <Modal visible={showFollowing} transparent animationType="fade" onRequestClose={() => setShowFollowing(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' }} onPress={() => setShowFollowing(false)}>
+          <View style={{ flex: 1, marginTop: 100, backgroundColor: colors.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg }}>
+            <Text style={[text.h2, { marginBottom: spacing.md }]}>Following</Text>
+            {loadingList ? (
+              <ActivityIndicator color={colors.primary} style={{ paddingVertical: spacing.xl }} />
+            ) : followingList.length === 0 ? (
+              <Text style={[text.muted, { textAlign: 'center', paddingVertical: spacing.xl }]}>Not following anyone yet.</Text>
+            ) : (
+              <FlatList
+                data={followingList}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => { setShowFollowing(false); router.push(`/users/${item._id}`); }}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}
+                  >
+                    {item.avatarUrl ? (
+                      <Image source={{ uri: item.avatarUrl }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: spacing.sm }} />
+                    ) : (
+                      <View style={{ width: 36, height: 36, borderRadius: 18, marginRight: spacing.sm, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="person" size={18} color={colors.textMuted} />
+                      </View>
+                    )}
+                    <Text style={[text.body, { fontWeight: '600' }]}>{item.displayName}</Text>
+                  </Pressable>
+                )}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </View>
         </Pressable>
       </Modal>
     </SafeAreaView>

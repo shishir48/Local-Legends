@@ -58,10 +58,11 @@ async function notifyMilestone(args: {
 interface ListOptions {
   category?: string;
   city?: string;
-  sort: 'votes' | 'recent';
+  sort: 'votes' | 'recent' | 'search';
   page: number;
   limit: number;
   top?: boolean;
+  q?: string;
 }
 
 export async function listGems(opts: ListOptions) {
@@ -98,9 +99,14 @@ export async function listGems(opts: ListOptions) {
 
   if (opts.category) filter.category = opts.category;
   if (opts.city) filter.city = opts.city.toLowerCase();
+  if (opts.q) {
+    filter.$text = { $search: opts.q };
+  }
 
-  const sortSpec: Record<string, 1 | -1> =
-    opts.sort === 'recent' ? { createdAt: -1 } : { voteCount: -1 };
+  const sortSpec: Record<string, 1 | -1 | { $meta: string }> =
+    opts.sort === 'recent' ? { createdAt: -1 }
+    : opts.sort === 'search' ? { score: { $meta: 'textScore' } }
+    : { voteCount: -1 };
 
   const skip = (opts.page - 1) * opts.limit;
 

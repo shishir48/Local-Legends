@@ -36,10 +36,11 @@ export const UpdateGemSchema = z.object({
 export const ListGemsQuerySchema = z.object({
   category: z.enum(GEM_CATEGORIES).optional(),
   city: z.string().trim().max(100).optional(),
-  sort: z.enum(['votes', 'recent']).default('votes'),
+  sort: z.enum(['votes', 'recent', 'search']).default('votes'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   top: z.coerce.boolean().optional(),
+  q: z.string().trim().max(200).optional(),
 });
 
 export const NearbyQuerySchema = z.object({

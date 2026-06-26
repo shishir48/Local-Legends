@@ -44,7 +44,7 @@ describe('GET /api/users/:id/gems', () => {
     expect(res.body.items.every((g: { id: string }) => typeof g.id === 'string')).toBe(true);
   });
 
-  it('returns public profile with followersCount, without email', async () => {
+  it('returns public profile with followersCount, followingCount, without email', async () => {
     const owner = await makeUser();
     const res = await request(app).get(`/api/users/${owner.id}/gems`).expect(200);
     expect(res.body.user).toMatchObject({
@@ -52,6 +52,7 @@ describe('GET /api/users/:id/gems', () => {
       displayName: expect.any(String),
       avatarUrl: null,
       followersCount: expect.any(Number),
+      followingCount: expect.any(Number),
     });
     expect(res.body.user.email).toBeUndefined();
   });
@@ -122,5 +123,59 @@ describe('POST /api/users/:id/follow', () => {
       .post('/api/users/64b8f0f0f0f0f0f0f0f0f0f0/follow')
       .set(auth(u.token))
       .expect(404);
+  });
+});
+
+describe('GET /api/users/:id/followers', () => {
+  it('returns an empty list for a user with no followers', async () => {
+    const u = await makeUser();
+    const res = await request(app).get(`/api/users/${u.id}/followers`).expect(200);
+    expect(res.body.items).toEqual([]);
+  });
+
+  it('returns followers after a follow', async () => {
+    const owner = await makeUser();
+    const follower = await makeUser();
+    await request(app).post(`/api/users/${owner.id}/follow`).set(auth(follower.token)).expect(200);
+
+    const res = await request(app).get(`/api/users/${owner.id}/followers`).expect(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0]._id).toBe(follower.id);
+    expect(res.body.items[0].displayName).toBe(follower.displayName);
+  });
+
+  it('returns 404 for a non-existent user', async () => {
+    await request(app).get('/api/users/64b8f0f0f0f0f0f0f0f0f0f0/followers').expect(404);
+  });
+
+  it('rejects a malformed user id (400)', async () => {
+    await request(app).get('/api/users/nope/followers').expect(400);
+  });
+});
+
+describe('GET /api/users/:id/following', () => {
+  it('returns an empty list for a user following no one', async () => {
+    const u = await makeUser();
+    const res = await request(app).get(`/api/users/${u.id}/following`).expect(200);
+    expect(res.body.items).toEqual([]);
+  });
+
+  it('returns the users a user is following after a follow', async () => {
+    const owner = await makeUser();
+    const follower = await makeUser();
+    await request(app).post(`/api/users/${owner.id}/follow`).set(auth(follower.token)).expect(200);
+
+    const res = await request(app).get(`/api/users/${follower.id}/following`).expect(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0]._id).toBe(owner.id);
+    expect(res.body.items[0].displayName).toBe(owner.displayName);
+  });
+
+  it('returns 404 for a non-existent user', async () => {
+    await request(app).get('/api/users/64b8f0f0f0f0f0f0f0f0f0f0/following').expect(404);
+  });
+
+  it('rejects a malformed user id (400)', async () => {
+    await request(app).get('/api/users/nope/following').expect(400);
   });
 });

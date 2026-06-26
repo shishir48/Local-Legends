@@ -98,7 +98,7 @@ export const authApi = {
 };
 
 export const gemsApi = {
-  list: (params?: { category?: string; city?: string; sort?: 'votes' | 'recent'; page?: number; limit?: number; top?: boolean }) =>
+  list: (params?: { category?: string; city?: string; sort?: 'votes' | 'recent' | 'search'; page?: number; limit?: number; top?: boolean; q?: string }) =>
     api.get<PaginatedGems>('/api/gems', { params }).then((r) => r.data),
   nearby: (params: { lat: number; lng: number; radius?: number; limit?: number }) =>
     api.get<{ items: Gem[] }>('/api/gems/nearby', { params }).then((r) => r.data),
@@ -119,6 +119,7 @@ export interface PublicUser {
   displayName: string;
   avatarUrl: string | null;
   followersCount?: number;
+  followingCount?: number;
 }
 
 export interface UserGemsResponse {
@@ -137,6 +138,10 @@ export const usersApi = {
     api.patch<AuthUser>('/api/users/me', patch).then((r) => r.data),
   follow: (id: string) =>
     api.post<{ following: boolean; followersCount: number }>(`/api/users/${id}/follow`).then((r) => r.data),
+  followers: (id: string) =>
+    api.get<{ items: { _id: string; displayName: string; avatarUrl: string | null }[] }>(`/api/users/${id}/followers`).then((r) => r.data),
+  following: (id: string) =>
+    api.get<{ items: { _id: string; displayName: string; avatarUrl: string | null }[] }>(`/api/users/${id}/following`).then((r) => r.data),
 };
 
 export const categoriesApi = {
