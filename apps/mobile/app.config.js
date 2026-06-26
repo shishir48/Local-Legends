@@ -19,7 +19,8 @@ module.exports = {
     // when a NATIVE change (new native module / SDK) requires a rebuild.
     // Bumped 1.1.4 → 1.2.0: added expo-notifications (FCM) — native module, so
     // a new build must ship under this runtime before its OTAs reach devices.
-    runtimeVersion: '1.2.0',
+    // Bumped 1.2.0 → 1.3.0: added react-native-maps.
+    runtimeVersion: '1.3.0',
     userInterfaceStyle: 'dark',
 
     icon: './assets/icon.png',
@@ -45,7 +46,7 @@ module.exports = {
 
     android: {
       package: 'com.shishir48.locallegend',
-      versionCode: 6,
+      versionCode: 7,
       // Firebase config for FCM push. Required for the production build; kept
       // out of git (see .gitignore). Override path with GOOGLE_SERVICES_JSON.
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON || './google-services.json',
@@ -80,6 +81,12 @@ module.exports = {
       ],
       'expo-notifications',
       'expo-build-properties',
+      [
+        'react-native-maps',
+        {
+          locationWhenInUsePermission: 'Show your location on the gem map.',
+        },
+      ],
     ],
 
     extra: {
