@@ -14,3 +14,7 @@ google-service-account.json
 
 # Firebase (FCM) — never commit
 google-services.json
+
+# Build artifacts — always download from EAS
+*.aab
+*.apk
