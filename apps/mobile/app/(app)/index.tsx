@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, Modal, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { FlatList, ActivityIndicator, Modal, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -23,6 +23,7 @@ function FeedHeader({
   topGems,
   searchQuery,
   searchFocused,
+  searchFetching,
   searchInputRef,
   onChange,
   onOpenFilter,
@@ -35,6 +36,7 @@ function FeedHeader({
   topGems: boolean;
   searchQuery: string;
   searchFocused: boolean;
+  searchFetching: boolean;
   searchInputRef: React.RefObject<TextInput | null>;
   onChange: (id: string | null) => void;
   onOpenFilter: () => void;
@@ -95,6 +97,9 @@ function FeedHeader({
           paddingHorizontal: spacing.md,
         }}>
           <Ionicons name="search" size={16} color={colors.textMuted} />
+          {searchFetching && (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: spacing.xs }} />
+          )}
           <TextInput
             ref={searchInputRef}
             value={searchQuery}
@@ -146,12 +151,35 @@ export default function FeedScreen() {
   const [topGems, setTopGems] = useState(false);
   const [newGems, setNewGems] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const router = useRouter();
-  const isSearching = searchQuery.trim().length > 0;
-  const gems = useGems({ category: isSearching ? null : category, city, q: isSearching ? searchQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
+
+  // Debounce search — wait 300ms after the user stops typing before firing the API call
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (searchQuery === '') {
+      // Clear immediately when search is emptied
+      setDebouncedQuery('');
+    } else if (searchQuery.trim().length >= 2) {
+      // Only debounce queries with 2+ characters
+      debounceRef.current = setTimeout(() => {
+        setDebouncedQuery(searchQuery.trim());
+      }, 300);
+    } else {
+      // Short queries (< 2 chars) also clear immediately
+      setDebouncedQuery('');
+    }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery]);
+
+  const isSearching = debouncedQuery.trim().length >= 2;
+  const gems = useGems({ category: isSearching ? null : category, city, q: isSearching ? debouncedQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
   const topGemsQuery = useTopGems();
   const newGemsQuery = useNewGems(newGems && !isSearching ? city : null);
   const categories = useCategories();
@@ -202,6 +230,7 @@ export default function FeedScreen() {
       topGems={isTopGemsView}
       searchQuery={searchQuery}
       searchFocused={searchFocused}
+      searchFetching={isSearching && data.isFetching}
       onChange={(id) => {
         setCategory(id);
         if (topGems) setTopGems(false);
@@ -214,7 +243,7 @@ export default function FeedScreen() {
     />
   );
 
-  if (data.isLoading) {
+  if (data.isLoading && !isSearching) {
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
         <AmbientGlow />
