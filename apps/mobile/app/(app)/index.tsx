@@ -28,7 +28,6 @@ function FeedHeader({
   onOpenFilter,
   onSearchChange,
   onSearchFocus,
-  onOpenMap,
 }: {
   city: string;
   categories: { id: string; label: string; emoji: string }[];
@@ -41,7 +40,6 @@ function FeedHeader({
   onOpenFilter: () => void;
   onSearchChange: (q: string) => void;
   onSearchFocus: (focused: boolean) => void;
-  onOpenMap: () => void;
 }) {
   return (
     <View>
@@ -61,21 +59,6 @@ function FeedHeader({
           </Text>
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.xs, marginTop: spacing.xs }}>
-          <Pressable
-            onPress={onOpenMap}
-            accessibilityRole="button"
-            accessibilityLabel="Open map"
-            style={{
-              paddingHorizontal: spacing.md,
-              paddingVertical: spacing.sm,
-              borderRadius: radius.pill,
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Ionicons name="map-outline" size={18} color={colors.text} />
-          </Pressable>
           <Pressable
           onPress={onOpenFilter}
           accessibilityRole="button"
@@ -227,7 +210,6 @@ export default function FeedScreen() {
       onOpenFilter={() => setShowFilter(true)}
       onSearchChange={setSearchQuery}
       onSearchFocus={setSearchFocused}
-      onOpenMap={() => setShowMap(true)}
       searchInputRef={searchInputRef}
     />
   );
