@@ -151,7 +151,7 @@ export default function FeedScreen() {
   const searchInputRef = useRef<TextInput>(null);
   const router = useRouter();
   const isSearching = searchQuery.trim().length > 0;
-  const gems = useGems({ category, city, q: isSearching ? searchQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
+  const gems = useGems({ category: isSearching ? null : category, city, q: isSearching ? searchQuery.trim() : undefined, sort: isSearching ? 'search' : undefined });
   const topGemsQuery = useTopGems();
   const newGemsQuery = useNewGems(newGems && !isSearching ? city : null);
   const categories = useCategories();
