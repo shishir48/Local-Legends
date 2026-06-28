@@ -109,7 +109,10 @@ export default function ProfileScreen() {
       </View>
       <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg }}>
         <Pressable
-          style={{ flex: 1 }}
+          style={({ pressed }) => ({
+            flex: 1,
+            opacity: pressed ? 0.75 : 1,
+          })}
           onPress={async () => {
             setLoadingList(true);
             setShowFollowers(true);
@@ -120,10 +123,25 @@ export default function ProfileScreen() {
             setLoadingList(false);
           }}
         >
-          <StatCard value={submissions.data?.user.followersCount ?? 0} label="Followers" />
+          <View
+            style={{
+              backgroundColor: glass.fill,
+              borderWidth: 1,
+              borderColor: glass.border,
+              padding: spacing.md,
+              borderRadius: radius.lg,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followersCount ?? 0}</Text>
+            <Text style={text.muted}>Followers</Text>
+          </View>
         </Pressable>
         <Pressable
-          style={{ flex: 1 }}
+          style={({ pressed }) => ({
+            flex: 1,
+            opacity: pressed ? 0.75 : 1,
+          })}
           onPress={async () => {
             setLoadingList(true);
             setShowFollowing(true);
@@ -134,7 +152,19 @@ export default function ProfileScreen() {
             setLoadingList(false);
           }}
         >
-          <StatCard value={submissions.data?.user.followingCount ?? 0} label="Following" />
+          <View
+            style={{
+              backgroundColor: glass.fill,
+              borderWidth: 1,
+              borderColor: glass.border,
+              padding: spacing.md,
+              borderRadius: radius.lg,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followingCount ?? 0}</Text>
+            <Text style={text.muted}>Following</Text>
+          </View>
         </Pressable>
       </View>
 
