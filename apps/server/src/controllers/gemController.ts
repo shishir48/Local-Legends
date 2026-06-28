@@ -20,6 +20,15 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function followingFeed(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await gemService.listFollowingFeed(req.user!.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function nearby(req: Request, res: Response, next: NextFunction) {
   try {
     const { lat, lng, radius, limit } = NearbyQuerySchema.parse(req.query);

@@ -403,3 +403,36 @@ export async function listGemsBySubmitter(userId: string) {
     commentCount: countMap.get(String(g._id)) ?? 0,
   }));
 }
+
+export async function listFollowingFeed(userId: string) {
+  const user = await User.findById(userId).select('following').lean();
+  if (!user || !user.following?.length) {
+    return { items: [], page: 1, limit: 50, total: 0, pages: 1 };
+  }
+
+  const items = await Gem.find({ submittedBy: { $in: user.following }, isDeleted: false })
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .populate('submittedBy', 'displayName avatarUrl')
+    .lean();
+
+  const gemIds = items.map((g) => g._id);
+  const counts = gemIds.length > 0
+    ? await Comment.aggregate<{ _id: Types.ObjectId; count: number }>([
+        { $match: { gem: { $in: gemIds } } },
+        { $group: { _id: '$gem', count: { $sum: 1 } } },
+      ])
+    : [];
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  return {
+    items: items.map((g) => ({
+      ...withId(g),
+      commentCount: countMap.get(String(g._id)) ?? 0,
+    })),
+    page: 1,
+    limit: 50,
+    total: items.length,
+    pages: 1,
+  };
+}

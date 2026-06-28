@@ -16,6 +16,7 @@ const voteLimiter = rateLimit({
 });
 
 router.get('/nearby', gemController.nearby);
+router.get('/following', requireAuth, gemController.followingFeed);
 router.get('/', gemController.list);
 router.post('/', requireAuth, uploadGemPhoto, gemController.create);
 

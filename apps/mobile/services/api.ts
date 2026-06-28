@@ -112,6 +112,8 @@ export const gemsApi = {
   remove: (id: string) => api.delete<void>(`/api/gems/${id}`).then((r) => r.data),
   update: (id: string, patch: { name?: string; description?: string; category?: Gem['category']; address?: string; city?: string; mapsUrl?: string | null }) =>
     api.patch<Gem>(`/api/gems/${id}`, patch).then((r) => r.data),
+  followingFeed: () =>
+    api.get<PaginatedGems>('/api/gems/following').then((r) => r.data),
 };
 
 export interface PublicUser {

@@ -154,3 +154,11 @@ export function useFollow(userId: string) {
     },
   });
 }
+
+export function useFeedGems() {
+  return useQuery({
+    queryKey: ['feed-gems'],
+    queryFn: () => gemsApi.followingFeed(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
