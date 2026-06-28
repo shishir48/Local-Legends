@@ -369,7 +369,14 @@ export default function GemDetailScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <AmbientGlow />
-      <Stack.Screen options={{ title: g.name }} />
+      <Stack.Screen options={{
+        title: g.name,
+        headerLeft: () => (
+          <Pressable onPress={() => router.back()} hitSlop={8} style={{ marginRight: spacing.md }}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </Pressable>
+        ),
+      }} />
       {g.photoUrl ? (
         <Image source={{ uri: g.photoUrl }} style={{ width: '100%', height: 280, backgroundColor: colors.surfaceAlt }} />
       ) : (
