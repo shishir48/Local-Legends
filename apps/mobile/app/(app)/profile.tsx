@@ -111,7 +111,7 @@ export default function ProfileScreen() {
         <Pressable
           style={({ pressed }) => ({
             flex: 1,
-            opacity: pressed ? 0.8 : 1,
+            opacity: pressed ? 0.75 : 1,
           })}
           onPress={async () => {
             setLoadingList(true);
@@ -125,10 +125,11 @@ export default function ProfileScreen() {
         >
           <View
             style={{
-              backgroundColor: glass.fill,
+              backgroundColor: 'rgba(245,158,11,0.06)',
               borderWidth: 1,
-              borderColor: glass.amberBorder,
+              borderColor: 'rgba(245,158,11,0.34)',
               padding: spacing.md,
+              paddingTop: spacing.sm,
               borderRadius: radius.lg,
             }}
           >
@@ -137,14 +138,17 @@ export default function ProfileScreen() {
                 <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followersCount ?? 0}</Text>
                 <Text style={text.muted}>Followers</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <View style={{ alignItems: 'flex-end' }}>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 10, marginTop: 1 }}>Tap</Text>
+              </View>
             </View>
           </View>
         </Pressable>
         <Pressable
           style={({ pressed }) => ({
             flex: 1,
-            opacity: pressed ? 0.8 : 1,
+            opacity: pressed ? 0.75 : 1,
           })}
           onPress={async () => {
             setLoadingList(true);
@@ -158,10 +162,11 @@ export default function ProfileScreen() {
         >
           <View
             style={{
-              backgroundColor: glass.fill,
+              backgroundColor: 'rgba(245,158,11,0.06)',
               borderWidth: 1,
-              borderColor: glass.amberBorder,
+              borderColor: 'rgba(245,158,11,0.34)',
               padding: spacing.md,
+              paddingTop: spacing.sm,
               borderRadius: radius.lg,
             }}
           >
@@ -170,7 +175,10 @@ export default function ProfileScreen() {
                 <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followingCount ?? 0}</Text>
                 <Text style={text.muted}>Following</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <View style={{ alignItems: 'flex-end' }}>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 10, marginTop: 1 }}>Tap</Text>
+              </View>
             </View>
           </View>
         </Pressable>
