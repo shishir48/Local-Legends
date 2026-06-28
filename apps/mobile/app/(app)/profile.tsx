@@ -111,7 +111,7 @@ export default function ProfileScreen() {
         <Pressable
           style={({ pressed }) => ({
             flex: 1,
-            opacity: pressed ? 0.75 : 1,
+            opacity: pressed ? 0.8 : 1,
           })}
           onPress={async () => {
             setLoadingList(true);
@@ -127,20 +127,24 @@ export default function ProfileScreen() {
             style={{
               backgroundColor: glass.fill,
               borderWidth: 1,
-              borderColor: glass.border,
+              borderColor: glass.amberBorder,
               padding: spacing.md,
               borderRadius: radius.lg,
-              alignItems: 'center',
             }}
           >
-            <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followersCount ?? 0}</Text>
-            <Text style={text.muted}>Followers</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followersCount ?? 0}</Text>
+                <Text style={text.muted}>Followers</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </View>
           </View>
         </Pressable>
         <Pressable
           style={({ pressed }) => ({
             flex: 1,
-            opacity: pressed ? 0.75 : 1,
+            opacity: pressed ? 0.8 : 1,
           })}
           onPress={async () => {
             setLoadingList(true);
@@ -156,14 +160,18 @@ export default function ProfileScreen() {
             style={{
               backgroundColor: glass.fill,
               borderWidth: 1,
-              borderColor: glass.border,
+              borderColor: glass.amberBorder,
               padding: spacing.md,
               borderRadius: radius.lg,
-              alignItems: 'center',
             }}
           >
-            <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followingCount ?? 0}</Text>
-            <Text style={text.muted}>Following</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={[text.h2, { color: colors.primary }]}>{submissions.data?.user.followingCount ?? 0}</Text>
+                <Text style={text.muted}>Following</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </View>
           </View>
         </Pressable>
       </View>
