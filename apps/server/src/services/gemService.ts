@@ -99,11 +99,11 @@ export async function listGems(opts: ListOptions) {
   }
 
   if (opts.new) {
-    // New gems — top 5 most recent in the selected city
+    // New gems — top 10 most recent in the selected city
     filter.city = opts.city?.toLowerCase();
     const newItems = await Gem.find(filter)
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(10)
       .populate('submittedBy', 'displayName avatarUrl')
       .lean();
 
@@ -122,7 +122,7 @@ export async function listGems(opts: ListOptions) {
         commentCount: countMap.get(String(g._id)) ?? 0,
       })),
       page: 1,
-      limit: 5,
+      limit: 10,
       total: newItems.length,
       pages: 1,
     };
