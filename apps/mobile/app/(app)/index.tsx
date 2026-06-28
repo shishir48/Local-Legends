@@ -13,6 +13,7 @@ import { FilterSheet } from '../../components/FilterSheet';
 import { AmbientGlow } from '../../components/AmbientGlow';
 import GemMap from '../../components/GemMap';
 import { colors, glass, rf, radius, spacing, text, CONTENT_MAX_WIDTH } from '../../utils/theme';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CITY_KEY = 'll.city';
 
@@ -157,6 +158,7 @@ export default function FeedScreen() {
   const [showMap, setShowMap] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Debounce search — wait 300ms after the user stops typing before firing the API call
   useEffect(() => {
@@ -304,6 +306,7 @@ export default function FeedScreen() {
           setNewGems((prev) => !prev);
           setTopGems(false);
           setCategory(null);
+          queryClient.invalidateQueries({ queryKey: ['new-gems'] });
         }}
         onChangeCity={() => setShowPicker(true)}
         onClose={() => setShowFilter(false)}

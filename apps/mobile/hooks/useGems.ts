@@ -53,7 +53,8 @@ export function useNewGems(city: string | null) {
     enabled: !!city,
     queryKey: ['new-gems', city],
     queryFn: () => gemsApi.list({ city: city!, new: true }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
